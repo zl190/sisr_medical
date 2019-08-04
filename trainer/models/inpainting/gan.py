@@ -16,7 +16,6 @@ from functools import partial
 from trainer.models.inpainting import InPainting, wgan_local_discriminator, wgan_global_discriminator
 from trainer import utils
 from trainer.utils.image.mask import batch_clip_image
-from trainer.config import config
 
 
 def wasserstein_loss(y_true, y_pred):
@@ -36,13 +35,13 @@ def gradient_penalty_loss(y_true, y_pred, averaged_samples=None, mask=None, norm
 class InPaintingWGAN:   
     def __init__(self, g=None, dl=None, dg=None, 
                  shape=(None, None, 1), local_shape=(None, None, 1), 
-                 WGAN_GP_LAMBDA = config.WGAN_GP_LAMBDA,
-                 COARSE_L1_ALPHA = config.COARSE_L1_ALPHA,
-                 L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
-                 AE_LOSS_ALPHA = config.AE_LOSS_ALPHA,
-                 GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
-                 LOCAL = config.LOCAL,
-                 NUM_ITER = config.NUM_ITER):
+                 WGAN_GP_LAMBDA = 10,
+                 COARSE_L1_ALPHA = 1.2,
+                 L1_LOSS_ALPHA = 1.2,
+                 AE_LOSS_ALPHA = 1.2,
+                 GAN_LOSS_ALPHA = 0.001,
+                 LOCAL = 1,
+                 NUM_ITER = 5):
         self.shape = shape
         self.local_shape = local_shape
         
@@ -149,6 +148,7 @@ class InPaintingWGAN:
                                                             self.L1_LOSS_ALPHA*self.LOCAL])
         
     def validate(self, validation_steps):
+        """Returns a dictionary of numpy scalars"""
         metrics_summary = {
             'd_loss': [],
             'g_loss': []
@@ -175,8 +175,9 @@ class InPaintingWGAN:
                                                                  [np.ones((image.shape[0],1)), # valid local
                                                                   np.ones((image.shape[0],1)), # valid global
                                                                   image, image, image_mask, image_mask]) # x1, x2, x1c, x2c MAE loss
+            
+            # Log important metrics
             fake_B = self.g.predict([image, mask])
-
             metrics_summary['d_loss'].append(0.5*(d_local_loss[0] + d_global_loss[0]))
             metrics_summary['g_loss'].append(0.5*(g_loss[1] + g_loss[2]))
             for metric in self.metrics:
@@ -245,7 +246,6 @@ class InPaintingWGAN:
                 x1, x2, x1c, x2c = self.g.predict([image, mask])
                 self.log['d_loss'] = 0.5*(d_local_loss[0] + d_global_loss[0])
                 self.log['g_loss'] = 0.5*(g_loss[1] + g_loss[2])
-                
                 for metric in self.metrics:
                     self.log[metric.__name__] = metric(image, x2c)
                 
