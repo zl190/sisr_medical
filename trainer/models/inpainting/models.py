@@ -90,7 +90,7 @@ class InPainting:
 def wgan_local_discriminator(base_filters=64, shape=(None, None, 1)):
     inputs = tf.keras.layers.Input(shape=shape)
     mask = tf.keras.layers.Input(shape=(shape[0], shape[1], 1)) # 1 where missing
-    x = Concatenate(axis=-1)([inputs, mask]) # TODO add latent noise z
+    x = inputs  # TODO add latent noise z, maybe add mask
 
     x = Conv2D(base_filters, (5,5), strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)
@@ -107,7 +107,7 @@ def wgan_local_discriminator(base_filters=64, shape=(None, None, 1)):
 def wgan_global_discriminator(base_filters=64, shape=(None, None, 1)):
     inputs = tf.keras.layers.Input(shape=shape)
     mask = tf.keras.layers.Input(shape=(shape[0], shape[1], 1)) # 1 where missing
-    x = Concatenate(axis=-1)([inputs, mask]) # TODO add latent noise z
+    x = inputs  # TODO add latent noise z, maybe add mask
 
     x = Conv2D(base_filters, (5,5), strides=2, padding='same')(x)
     x = LeakyReLU(0.2)(x)

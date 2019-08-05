@@ -13,7 +13,9 @@ def get_oxford_flowers_dataset(train_type='train', size=(256, 256, 3), mask_size
     dataset = data[train_type]
     dataset = dataset.map(lambda x: tf.image.random_crop(x['image'], size), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.map(lambda x: get_mask_image_pair(x, mask_size=mask_size), num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    return dataset.repeat().batch(batch_size).prefetch(1), count[train_type]
+    dataset = dataset.repeat().batch(batch_size).prefetch(2)
+    dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+    return dataset, count[train_type]
     
 def get_mask_image_pair(image, mask_size=(128, 128)):
     mask, bbox = get_central_mask2d(size=mask_size, template_shape=tf.shape(image)[:-1])
