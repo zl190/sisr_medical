@@ -72,12 +72,15 @@ class InPaintingWGAN:
         # Inputs
         real_image = tf.keras.layers.Input(shape=self.shape)   # Input images from both domains
         mask = tf.keras.layers.Input(shape=(self.shape[0], self.shape[1], 1))
-        
-        # Build the discriminators
-        self.g.trainable = False
 
-        # Build global discriminator
+        # Build the critics
+        self.g.trainable = False
+        self.dl.trainable = True
+        self.dg.trainable = True
+        
         _, _, _, fake_image = self.g([real_image, mask])
+
+        # Build global critic
         global_valid = self.dg([real_image, mask])
         global_fake = self.dg([fake_image, mask])
         global_interpolated_img = tf.keras.layers.Lambda(random_interpolates)((real_image, fake_image))
@@ -96,7 +99,7 @@ class InPaintingWGAN:
                                          optimizer=optimizer,
                                          loss_weights=[1, 1, self.WGAN_GP_LAMBDA])
         
-        # Build local discriminator
+        # Build local critic
         local_fake_image, local_mask = tf.keras.layers.Lambda(lambda x: batch_clip_image(x[0], x[1], self.local_shape[0]))((fake_image, mask))
         local_real_image, local_mask = tf.keras.layers.Lambda(lambda x: batch_clip_image(x[0], x[1], self.local_shape[0]))((real_image, mask))
         
@@ -151,7 +154,12 @@ class InPaintingWGAN:
         """Returns a dictionary of numpy scalars"""
         metrics_summary = {
             'd_loss': [],
-            'g_loss': []
+            'g_loss': [],
+            'd_local': [],
+            'd_global': [],
+            'g_local': [],
+            'g_global': [],
+            'gp': []
         }
         
         for metric in self.metrics:
@@ -178,8 +186,16 @@ class InPaintingWGAN:
             
             # Log important metrics
             fake_B = self.g.predict([image, mask])
-            metrics_summary['d_loss'].append(0.5*(d_local_loss[0] + d_global_loss[0]))
-            metrics_summary['g_loss'].append(0.5*(g_loss[1] + g_loss[2]))
+            metrics_summary['d_local'].append(0.5*(d_local_loss[1]+d_local_loss[2]))
+            metrics_summary['d_global'].append(0.5*(d_global_loss[1]+d_global_loss[2]))
+            metrics_summary['gp'].append(0.5*(d_local_loss[3]+d_global_loss[3]))
+            
+            metrics_summary['g_local'].append(self.GAN_LOSS_ALPHA*self.LOCAL*g_loss[1])
+            metrics_summary['g_global'].append(self.GAN_LOSS_ALPHA*g_loss[2])
+            
+            metrics_summary['g_loss'].append(g_loss[0])
+            metrics_summary['d_loss'].append(0.5*(d_local_loss[0]+d_global_loss[0]))       
+            
             for metric in self.metrics:
                 metrics_summary[metric.__name__].append(metric(image, fake_B).numpy())
                         
@@ -193,7 +209,7 @@ class InPaintingWGAN:
         """Initialize Callbacks and Datasets"""
         if not hasattr(self, 'dataset_next'):
             self.dataset_next = iter(dataset)
-            metric_names = ['d_loss', 'g_loss']
+            metric_names = ['d_local', 'd_global', 'g_local', 'g_global', 'd_loss', 'g_loss', 'gp']
             metric_names.extend([metric.__name__ for metric in self.metrics])
 
         if not hasattr(self, 'dataset_val_next') and validation_data is not None:
@@ -223,10 +239,9 @@ class InPaintingWGAN:
             for step in range(steps_per_epoch):
                 for callback in callbacks: callback.on_batch_begin(step, logs=self.log)
                 
-                image, mask = next(self.dataset_next)
-                image_mask = np.concatenate((image, mask), axis=-1)
-                
-                for i in range(self.NUM_ITER): # Train discriminator more than generator
+                for i in range(self.NUM_ITER): # Train critics more than generator
+                    image, mask = next(self.dataset_next)
+                    image_mask = np.concatenate((image, mask), axis=-1)
                     d_local_loss = self.local_critic_model.train_on_batch([image, mask], 
                                                                           [np.ones((image.shape[0],1)), # valid
                                                                            -1*np.ones((image.shape[0],1)), # invalid
@@ -236,7 +251,9 @@ class InPaintingWGAN:
                                                                             [np.ones((image.shape[0],1)), # valid
                                                                              -1*np.ones((image.shape[0],1)), # invalid
                                                                              np.zeros((image.shape[0],1))]) # dummy for gradient penalty
-
+                
+                image, mask = next(self.dataset_next)
+                image_mask = np.concatenate((image, mask), axis=-1)
                 g_loss = self.combined_generator_model.train_on_batch([image, mask],
                                                                       [np.ones((image.shape[0],1)), # valid local
                                                                        np.ones((image.shape[0],1)), # valid global
@@ -244,8 +261,15 @@ class InPaintingWGAN:
                 
                 # Log important metrics
                 x1, x2, x1c, x2c = self.g.predict([image, mask])
-                self.log['d_loss'] = 0.5*(d_local_loss[0] + d_global_loss[0])
-                self.log['g_loss'] = 0.5*(g_loss[1] + g_loss[2])
+                self.log['d_local'] = 0.5*(d_local_loss[1]+d_local_loss[2])
+                self.log['d_global'] = 0.5*(d_global_loss[1]+d_global_loss[2])
+                self.log['gp'] = 0.5*(d_local_loss[3]+d_global_loss[3])
+                
+                self.log['g_local'] = self.GAN_LOSS_ALPHA*self.LOCAL*g_loss[1]
+                self.log['g_global'] = self.GAN_LOSS_ALPHA*g_loss[2]
+                self.log['g_loss'] = g_loss[0]
+                self.log['d_loss'] = 0.5*(d_local_loss[0]+d_global_loss[0])
+                
                 for metric in self.metrics:
                     self.log[metric.__name__] = metric(image, x2c)
                 

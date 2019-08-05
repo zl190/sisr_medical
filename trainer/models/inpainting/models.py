@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, Concatenate, Flatten, LeakyReLU, Dense
+from tensorflow.keras.layers import Conv2D, Concatenate, Flatten, LeakyReLU, Dense, MaxPooling2D
 
 
 class InPainting:
@@ -90,16 +90,24 @@ class InPainting:
 def wgan_local_discriminator(base_filters=64, shape=(None, None, 1)):
     inputs = tf.keras.layers.Input(shape=shape)
     mask = tf.keras.layers.Input(shape=(shape[0], shape[1], 1)) # 1 where missing
-    x = inputs  # TODO add latent noise z, maybe add mask
+    x = Concatenate(axis=-1)([inputs, mask])  # TODO add latent noise z
 
-    x = Conv2D(base_filters, (5,5), strides=2, padding='same')(x)
+    x = Conv2D(base_filters, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*2, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+    
+    x = Conv2D(base_filters*2, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*4, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+    
+    x = Conv2D(base_filters*4, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*8, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+    
+    x = Conv2D(base_filters*8, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
+    x = MaxPooling2D()(x)
+    
     x = Flatten()(x)
     x = Dense(1)(x)
     return tf.keras.Model([inputs, mask], x)
@@ -107,16 +115,24 @@ def wgan_local_discriminator(base_filters=64, shape=(None, None, 1)):
 def wgan_global_discriminator(base_filters=64, shape=(None, None, 1)):
     inputs = tf.keras.layers.Input(shape=shape)
     mask = tf.keras.layers.Input(shape=(shape[0], shape[1], 1)) # 1 where missing
-    x = inputs  # TODO add latent noise z, maybe add mask
+    x = Concatenate(axis=-1)([inputs, mask])  # TODO add latent noise z
 
-    x = Conv2D(base_filters, (5,5), strides=2, padding='same')(x)
+    x = Conv2D(base_filters, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*2, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+
+    x = Conv2D(base_filters*2, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*4, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+
+    x = Conv2D(base_filters*4, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(base_filters*4, (5,5), strides=2, padding='same')(x)
+    x = MaxPooling2D()(x)
+
+    x = Conv2D(base_filters*4, (5,5), strides=1, padding='same')(x)
     x = LeakyReLU(0.2)(x)
+    x = MaxPooling2D()(x)
+
     x = Flatten()(x)
     x = Dense(1)(x)
     return tf.keras.Model([inputs, mask], x)
@@ -128,12 +144,6 @@ def resize(x, scale=2, to_shape=None, align_corners=True, func=tf.compat.v1.imag
         return func(x, new_xs, align_corners=align_corners)
     else:
         return func(x, [to_shape[0], to_shape[1]], align_corners=align_corners)
-
-def set_shape_like(inputs):
-    x = inputs[0]
-    template = inputs[1]
-    x.set_shape(template.get_shape().as_list())
-    return x
 
 def contextual_attention(f, b, masks=None, ksize=3, stride=1, rate=1, fuse_k=3, softmax_scale=10.0, fuse=True):
     # get shapes

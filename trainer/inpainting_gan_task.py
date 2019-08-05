@@ -60,10 +60,11 @@ model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.5, beta_2=0
 # Callbacks
 write_freq = int(train_count/config.bs/10)
 
-start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
 prog_bar = tf.keras.callbacks.ProgbarLogger(count_mode='steps', stateful_metrics=None)
 saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_g_loss', verbose=1, save_freq='epoch', save_best_only=False)
+
+start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
 save_multi_model = callbacks.SaveMultiModel([('g', generator_model), ('dg', global_discriminator_model), ('dl', local_discriminator_model)], config.model_dir)
 log_code = callbacks.LogCode(config.job_dir, './trainer')
 copy_keras = callbacks.CopyKerasModel(config.model_dir, config.job_dir)

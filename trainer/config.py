@@ -2,7 +2,7 @@ import time
 
 config = type('', (), {})()
 
-config.bs = 32
+config.bs = 4
 config.in_h = 256
 config.in_w = 256
 config.in_lh = 128
@@ -18,7 +18,7 @@ config.NUM_ITER = 5
 
 config.epochs = 100
 config.m = True
-config.lr = 1e-4
+config.lr = 1e-5
 
 config.job_dir = 'gs://duke-research-us/debug/{}'.format(str(time.time()))
 config.model_dir = './trained_models'

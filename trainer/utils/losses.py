@@ -15,7 +15,7 @@ def combined_loss(l_ssim=0.8, l_mae=0.1, l_mse=0.1):
 def mask_loss(y_true, y_pred, loss_fn=None, gamma=0.99, **kwargs):
     image, mask = y_true[:,:,:,:-1], y_true[:,:,:,-1:]
     
-    # Spatial mask currently assumes crop is always center and same throughout the batch
+#     Spatial mask currently assumes crop is always center and same throughout the batch
     mask_shape = tf.shape(mask)
     x, y = tf.meshgrid(tf.range(mask_shape[1]), tf.range(mask_shape[2]))
     x = tf.cast(x, dtype=tf.float32)

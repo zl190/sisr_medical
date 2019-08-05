@@ -13,7 +13,7 @@ def get_oxford_flowers_dataset(train_type='train', size=(256, 256, 3), mask_size
     dataset = data[train_type]
     dataset = dataset.map(lambda x: tf.image.random_crop(x['image'], size), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.map(lambda x: get_mask_image_pair(x, mask_size=mask_size), num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.repeat().batch(batch_size).prefetch(2)
+    dataset = dataset.repeat().batch(batch_size).prefetch(16)
     dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
     return dataset, count[train_type]
     
