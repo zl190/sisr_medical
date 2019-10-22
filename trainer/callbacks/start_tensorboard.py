@@ -9,7 +9,7 @@ class StartTensorBoard(tf.keras.callbacks.Callback):
         
     def start_tensorboard(self, log_dir):
         try:
-            p = subprocess.Popen(['tensorboard', '--logdir', self.log_dir])
+            p = subprocess.Popen(['tensorboard', '--host', '0.0.0.0', '--logdir', self.log_dir])
         except subprocess.CalledProcessError as err:
             print('ERROR:', err)
             

@@ -1,1 +1,1 @@
-import trainer.models.inpainting
+import trainer.models.sisr

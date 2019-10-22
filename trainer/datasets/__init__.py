@@ -1,1 +1,1 @@
-from trainer.datasets.oxford_flowers import *
+from trainer.datasets.oxford_iiit_pet import *
