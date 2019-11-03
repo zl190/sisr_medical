@@ -1,2 +1,2 @@
-from trainer.models.sisr.models import MySRResNet
-# from trainer.models.inpainting.gan import InPaintingWGAN
+from trainer.models.sisr.models import MySRResNet, Discriminator
+from trainer.models.sisr.gan import MySRGAN
