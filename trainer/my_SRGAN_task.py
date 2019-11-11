@@ -40,32 +40,27 @@ if __name__ == '__main__':
             setattr(config, key, parser.get_default(key))
 
 # Prepare data
-train_dataset, train_count = datasets.get_oxford_flowers_dataset('test', batch_size=config.bs, mask_size=(config.in_lh, config.in_lw), size=(config.in_h, config.in_w, 3))
-validation_dataset, validation_count = datasets.get_oxford_flowers_dataset('validation', batch_size=config.bs, mask_size=(config.in_lh, config.in_lw), size=(config.in_h, config.in_w, 3))
+train_dataset, train_count = datasets.get_oxford_iiit_pet_dataset('train', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
+validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('test', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
+
 
 # Compile model
-model = models.inpainting.InPaintingWGAN(shape=(config.in_h, config.in_w, 3), 
-                                         local_shape=(config.in_lh, config.in_lw, 3),
-                                         WGAN_GP_LAMBDA = config.WGAN_GP_LAMBDA,
-                                         COARSE_L1_ALPHA = config.COARSE_L1_ALPHA,
-                                         L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
-                                         AE_LOSS_ALPHA = config.AE_LOSS_ALPHA,
-                                         GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
-                                         LOCAL = config.LOCAL,
-                                         NUM_ITER = config.NUM_ITER)
-
-generator_model, global_discriminator_model, local_discriminator_model = model.get_models()
+model = models.sisr.MySRGAN(hr_shape=(config.in_h, config.in_w, 3), 
+                            lr_shape=(config.in_lh, config.in_lw, 3),
+                            GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
+                            NUM_ITER = config.NUM_ITER)
+generator_model, discriminator_model = model.get_models()
 model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.5, beta_2=0.9), metrics=[utils.mae, utils.psnr])
-    
+
 # Callbacks
 write_freq = int(train_count/config.bs/10)
-
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
 prog_bar = tf.keras.callbacks.ProgbarLogger(count_mode='steps', stateful_metrics=None)
-saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_g_loss', verbose=1, save_freq='epoch', save_best_only=False)
+saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_g_loss', verbose=1, save_freq='epoch', save_best_only=False, save_format="tf")
 
 start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
-save_multi_model = callbacks.SaveMultiModel([('g', generator_model), ('dg', global_discriminator_model), ('dl', local_discriminator_model)], config.model_dir)
+save_multi_model = callbacks.SaveMultiModel([('g', generator_model), ('d', discriminator_model)], config.model_dir)
+
 log_code = callbacks.LogCode(config.job_dir, './trainer')
 copy_keras = callbacks.CopyKerasModel(config.model_dir, config.job_dir)
 
@@ -77,7 +72,7 @@ model.fit(train_dataset,
           steps_per_epoch=int(train_count/config.bs),
           epochs=config.epochs,
           validation_data=validation_dataset,
-          validation_steps=int(validation_count/config.bs/10),
+          validation_steps=int(validation_count/config.bs),
           verbose=1,
           callbacks=[
             log_code, 
@@ -88,4 +83,5 @@ model.fit(train_dataset,
             image_gen_val, 
             saving, 
             save_multi_model, 
-            copy_keras])
+            copy_keras
+          ])

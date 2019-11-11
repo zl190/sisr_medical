@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Conv2D, Concatenate, Flatten, LeakyReLU, Den
 
 class MySRResNet(tf.keras.Model):
   def __init__(self):
-    super(MySRResNet, self).__init__(name='')
+    super(MySRResNet, self).__init__(name='MySRResNet')
     
     # k9n64s1
     self.conv1 = tf.keras.layers.Conv2D(64, 9, 1, padding='same')
@@ -168,4 +168,101 @@ class MySRResNet(tf.keras.Model):
 
     # conv5, k9n3s1
     x = self.conv5(x)         
+    return x
+  
+  
+class Discriminator(tf.keras.Model):
+  def __init__(self):
+    super(Discriminator, self).__init__(name='Discriminator')
+    
+    # k3n64s1
+    self.conv1 = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
+    self.leakyrelu1 = tf.keras.layers.LeakyReLU(alpha=0.2)
+    
+    #  blocks
+    # conv2_1, k3n64s2
+    self.conv21 = tf.keras.layers.Conv2D(64, 3, 2, padding='same')
+    self.bn21 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu21 = tf.keras.layers.LeakyReLU(alpha=0.2)
+     
+    # conv2_2, k3n128s1
+    self.conv22 = tf.keras.layers.Conv2D(128, 3, 1, padding='same')
+    self.bn22 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu22 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    # conv2_3, k3n128s2
+    self.conv23 = tf.keras.layers.Conv2D(128, 3, 2, padding='same')
+    self.bn23 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu23 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    # conv2_4, k3n256s1
+    self.conv24 = tf.keras.layers.Conv2D(256, 3, 1, padding='same')
+    self.bn24 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu24 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    # conv2_5, k3n256s2
+    self.conv25 = tf.keras.layers.Conv2D(256, 3, 2, padding='same')
+    self.bn25 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu25 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    # conv2_6, k3n512s1
+    self.conv26 = tf.keras.layers.Conv2D(512, 3, 1, padding='same')
+    self.bn26 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu26 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    # conv2_7, k3n512s2 -- end of B residual block
+    self.conv27 = tf.keras.layers.Conv2D(512, 3, 2, padding='same')
+    self.bn27 = tf.keras.layers.BatchNormalization()
+    self.leakyrelu27 = tf.keras.layers.LeakyReLU(alpha=0.2)
+
+    self.flatten = tf.keras.layers.Flatten()
+    self.dense1 = tf.keras.layers.Dense(1024)
+    self.leakyrelu3 = tf.keras.layers.LeakyReLU(alpha=0.2)
+    self.dense2 = tf.keras.layers.Dense(1, activation='sigmoid')
+    
+
+  def call(self, input_tensor, training=False):
+    input_tensor = self.conv1(input_tensor)
+    input_tensor = self.leakyrelu1(input_tensor)
+    
+    # conv2_1, k3n64s2
+    x = self.conv21(input_tensor)
+    x = self.bn21(x)
+    x = self.leakyrelu21(x)                          
+     
+    # conv2_2, k3n128s1
+    x = self.conv22(x)          
+    x = self.bn22(x)               
+    x = self.leakyrelu22(x)                        
+
+    # conv2_3, k3n128s2
+    x = self.conv23(x)         
+    x = self.bn23(x)                
+    x = self.leakyrelu23(x)                         
+
+    # conv2_4, k3n256s1
+    x = self.conv24(x)           
+    x = self.bn24(x)                
+    x = self.leakyrelu24(x)            
+
+    # conv2_5, k3n256s2
+    x = self.conv25(x)           
+    x = self.bn25(x)                
+    x = self.leakyrelu25(x)            
+
+    # conv2_6, k3n512s1
+    x = self.conv25(x)           
+    x = self.bn25(x)                
+    x = self.leakyrelu25(x)            
+
+    # conv2_7, k3n512s2 -- end of B residual block
+    x = self.conv25(x)           
+    x = self.bn25(x)                
+    x = self.leakyrelu25(x)            
+
+    x = self.flatten(x)
+    x = self.dense1(x)
+    x = self.leakyrelu3(x)
+    x = self.dense2(x)
+
     return x
