@@ -138,6 +138,8 @@ class MySRGAN:
         """Returns a dictionary of numpy scalars"""
         metrics_summary = {
             'd_loss': [],
+#             'd_val_loss': [],
+#             'd_inval_loss': [],
             'g_loss': [],
         }
         
@@ -149,7 +151,7 @@ class MySRGAN:
 
             d_global_loss = self.global_critic_model.test_on_batch([lr, hr], 
                                                                     [np.ones((hr.shape[0],1)), # valid
-                                                                     -1*np.ones((hr.shape[0],1)), # invalid
+                                                                     np.zeros((hr.shape[0],1)), # invalid
                                                                      ]) 
 
             g_loss = self.combined_generator_model.test_on_batch([lr, hr],
@@ -159,6 +161,8 @@ class MySRGAN:
             # Log important metrics
             fake_B = self.g.predict(lr)
             metrics_summary['d_loss'].append(d_global_loss[0]+d_global_loss[1])
+#             metrics_summary['d_val_loss'].append(d_global_loss[0])
+#             metrics_summary['d_inval_loss'].append(d_global_loss[1])
             metrics_summary['g_loss'].append(g_loss[0]+g_loss[1])
             
             for metric in self.metrics:
@@ -174,7 +178,11 @@ class MySRGAN:
         """Initialize Callbacks and Datasets"""
         if not hasattr(self, 'dataset_next'):
             self.dataset_next = iter(dataset)
-            metric_names = ['d_loss', 'g_loss']
+            metric_names = ['d_loss', 
+                            'g_loss', 
+                            #'d_val_loss', 
+                            #'d_inval_loss'
+                           ]
             metric_names.extend([metric.__name__ for metric in self.metrics])
 
         if not hasattr(self, 'dataset_val_next') and validation_data is not None:
@@ -207,14 +215,14 @@ class MySRGAN:
 #                 for i in range(self.NUM_ITER): # Train critics more than generator
 #                     lr, hr = next(self.dataset_next)
 #                     d_global_loss = self.global_critic_model.train_on_batch([lr, hr], 
-#                                                                             [np.ones((image.shape[0],1)), # valid
-#                                                                              -1*np.ones((image.shape[0],1)), # invalid
+#                                                                             [np.ones((hr.shape[0],1)), # valid
+#                                                                              np.zeros((hr.shape[0],1)), # invalid
 #                                                                              ]) 
                 
                 lr, hr = next(self.dataset_next)
                 d_global_loss = self.global_critic_model.train_on_batch([lr, hr], 
                                                                         [np.ones((hr.shape[0],1)), # valid
-                                                                          -1*np.ones((hr.shape[0],1)), # invalid
+                                                                         np.zeros((hr.shape[0],1)), # invalid
                                                                         ])
                 g_loss = self.combined_generator_model.train_on_batch([lr, hr],
                                                                       [np.ones((hr.shape[0],1)), # valid 
@@ -223,7 +231,9 @@ class MySRGAN:
                 
                 # Log important metrics
                 fake_image = self.g.predict(lr)
-                self.log['g_loss'] = g_loss[0]
+                self.log['g_loss'] = g_loss[0] + g_loss[1]
+#                 self.log['d_val_loss'] = d_global_loss[0]
+#                 self.log['d_inval_loss'] = d_global_loss[1]
                 self.log['d_loss'] = d_global_loss[0]+d_global_loss[1]
                 
                 for metric in self.metrics:

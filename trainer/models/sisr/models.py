@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Conv2D, Concatenate, Flatten, LeakyReLU, Den
 
 class MySRResNet(tf.keras.Model):
   def __init__(self):
-    super(MySRResNet, self).__init__(name='')
+    super(MySRResNet, self).__init__(name='MySRResNet')
     
     # k9n64s1
     self.conv1 = tf.keras.layers.Conv2D(64, 9, 1, padding='same')
@@ -173,7 +173,7 @@ class MySRResNet(tf.keras.Model):
   
 class Discriminator(tf.keras.Model):
   def __init__(self):
-    super(Discriminator, self).__init__(name='')
+    super(Discriminator, self).__init__(name='Discriminator')
     
     # k3n64s1
     self.conv1 = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
@@ -218,7 +218,7 @@ class Discriminator(tf.keras.Model):
     self.flatten = tf.keras.layers.Flatten()
     self.dense1 = tf.keras.layers.Dense(1024)
     self.leakyrelu3 = tf.keras.layers.LeakyReLU(alpha=0.2)
-    self.dense2 = tf.keras.layers.Dense(1, activation='softmax')
+    self.dense2 = tf.keras.layers.Dense(1, activation='sigmoid')
     
 
   def call(self, input_tensor, training=False):

@@ -14,7 +14,7 @@ config.L1_LOSS_ALPHA = 1.2 # importance of fine l1
 config.AE_LOSS_ALPHA = 1.2 # importance of full reconstruction
 config.GAN_LOSS_ALPHA = 0.001 # importance of GAN loss
 config.LOCAL = 1
-config.NUM_ITER = 1
+config.NUM_ITER = 5
 
 config.epochs = 100
 config.m = True
