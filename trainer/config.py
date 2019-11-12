@@ -20,7 +20,7 @@ config.epochs = 100
 config.m = True
 config.lr = 1e-5
 
-config.job_dir = 'gs://gradient-datascience/zisheng/debug/SRGAN/{}'.format(str(time.time()))
+config.job_dir = 'gs://bme590/zisheng/debug/SRGAN/{}'.format(str(time.time()))
 config.model_dir = './trained_models'
 
 config.image_dir = None
