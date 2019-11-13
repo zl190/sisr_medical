@@ -47,10 +47,11 @@ validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('tes
 # Compile model
 model = models.sisr.MySRGAN(hr_shape=(config.in_h, config.in_w, 3), 
                             lr_shape=(config.in_lh, config.in_lw, 3),
+                            L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
                             GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
                             NUM_ITER = config.NUM_ITER)
 generator_model, discriminator_model = model.get_models()
-model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.5, beta_2=0.9), metrics=[utils.mae, utils.psnr])
+model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.9), metrics=[utils.center_ssim, utils.center_psnr])
 
 # Callbacks
 write_freq = int(train_count/config.bs/10)

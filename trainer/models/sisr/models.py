@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, Concatenate, Flatten, LeakyReLU, Dense, MaxPooling2D
 
 
 class MySRResNet(tf.keras.Model):
@@ -88,17 +87,17 @@ class MySRResNet(tf.keras.Model):
     
 
   def call(self, input_tensor, training=False):
-    input_tensor = self.conv1(input_tensor)
-    input_tensor = self.prelu1(input_tensor)
+    x1 = self.conv1(input_tensor)
+    x1 = self.prelu1(x1)
     
      # B residual blocks
     # conv2_1, k3n64s1
-    x = self.conv21a(input_tensor)
+    x = self.conv21a(x1)
     x = self.bn21a(x)
     x = self.prelu21a(x)                          
     x = self.conv21b(x)                         
     x = self.bn21b(x)                 
-    x_append = self.x21_append(input_tensor)
+    x_append = self.x21_append(x1)
     x += x_append                   
     x21 = self.bn_x21(x)                 
 
@@ -152,7 +151,7 @@ class MySRResNet(tf.keras.Model):
     # conv3, k3n64s1
     x = self.conv3(x25)        
     x = self.bn3(x)                
-    x_append = self.x3_append(input_tensor)
+    x_append = self.x3_append(x1)
     x += x_append
     x = self.bn_x3(x)      
 
@@ -216,17 +215,17 @@ class Discriminator(tf.keras.Model):
     self.leakyrelu27 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
     self.flatten = tf.keras.layers.Flatten()
-    self.dense1 = tf.keras.layers.Dense(1024)
+    self.dense1 = tf.keras.layers.Dense(1024, activation='softmax')
     self.leakyrelu3 = tf.keras.layers.LeakyReLU(alpha=0.2)
     self.dense2 = tf.keras.layers.Dense(1, activation='sigmoid')
     
 
   def call(self, input_tensor, training=False):
-    input_tensor = self.conv1(input_tensor)
-    input_tensor = self.leakyrelu1(input_tensor)
+    x1 = self.conv1(input_tensor)
+    x1 = self.leakyrelu1(x1)
     
     # conv2_1, k3n64s2
-    x = self.conv21(input_tensor)
+    x = self.conv21(x1)
     x = self.bn21(x)
     x = self.leakyrelu21(x)                          
      
