@@ -47,16 +47,17 @@ validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('tes
 # Compile model
 model = models.sisr.MySRGAN(hr_shape=(config.in_h, config.in_w, 3), 
                             lr_shape=(config.in_lh, config.in_lw, 3),
+                            L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
                             GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
                             NUM_ITER = config.NUM_ITER)
 generator_model, discriminator_model = model.get_models()
-model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.5, beta_2=0.9), metrics=[utils.mae, utils.psnr])
+model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.9), metrics=[utils.center_ssim, utils.center_psnr])
 
 # Callbacks
 write_freq = int(train_count/config.bs/10)
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
 prog_bar = tf.keras.callbacks.ProgbarLogger(count_mode='steps', stateful_metrics=None)
-saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_g_loss', verbose=1, save_freq='epoch', save_best_only=False, save_format="tf")
+saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_g_loss', verbose=1, save_freq='epoch', save_best_only=False)
 
 start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
 save_multi_model = callbacks.SaveMultiModel([('g', generator_model), ('d', discriminator_model)], config.model_dir)

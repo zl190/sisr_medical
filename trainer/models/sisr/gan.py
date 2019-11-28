@@ -19,47 +19,65 @@ from trainer import utils
 
 
 #Load VGG model
-from tensorflow.keras import models, optimizers, metrics
-from tensorflow.keras.applications.vgg19 import preprocess_input
-vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet', input_shape = [224,224,3])
-vgg.trainable = False
-content_layers = 'block5_conv2'
+# from tensorflow.keras import models, optimizers, metrics
+# from tensorflow.keras.applications.vgg19 import preprocess_input
+# vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet', input_shape = [224,224,3])
+# vgg.trainable = False
+# content_layers = 'block5_conv2'
 
-lossModel = models.Model([vgg.input], vgg.get_layer(content_layers).output, name = 'vggL')
+# lossModel = models.Model([vgg.input], vgg.get_layer(content_layers).output, name = 'vggL')
 
-def _lossMSE(y_true, y_pred):
-  return tf.reduce_mean(tf.square(y_true - y_pred))
+# def _lossMSE(y_true, y_pred):
+#   return tf.reduce_mean(tf.square(y_true - y_pred))
 
-def _lossVGG(y_true, y_pred):
-  Xt = preprocess_input(y_pred*255)
-  Yt = preprocess_input(y_true*255)
-  vggX = lossModel(Xt)
-  vggY = lossModel(Yt)
-  return tf.reduce_mean(tf.square(vggY-vggX))
+# def _lossVGG(y_true, y_pred):
+#   Xt = preprocess_input(y_pred*255)
+#   Yt = preprocess_input(y_true*255)
+#   vggX = lossModel(Xt)
+#   vggY = lossModel(Yt)
+#   return tf.reduce_mean(tf.square(vggY-vggX))
 
-def _lossGAN(y_pred):
-  """
-    params:
-    X: hr_pred
-  """
-  return tf.sum(-1*tf.math.log(D(y_pred)))
+# def _lossGAN(y_pred):
+#   """
+#     params:
+#     X: hr_pred
+#   """
+#   return tf.sum(-1*tf.math.log(D(y_pred)))
 
-
+LAMBDA = 100
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-def d_loss(real_output, fake_output):
-    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
-    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
-    total_loss = real_loss + fake_loss
-    return total_loss
 
-def g_loss(fake_output):
-    return cross_entropy(tf.ones_like(fake_output), fake_output)
-  
+
+def d_real_loss(y_true, disc_real_output):
+    real_loss = cross_entropy(tf.ones_like(disc_real_output), disc_real_output)
+    return real_loss
+
+def d_generated_loss(y_true, disc_generated_output):
+    generated_loss = cross_entropy(tf.zeros_like(disc_generated_output), disc_generated_output)
+    return generated_loss
+
+def g_gan_loss(y_true, disc_generated_output):
+    gan_loss = cross_entropy(tf.ones_like(disc_generated_output), disc_generated_output)
+    return gan_loss
+
+def l1_loss(y_true, gen_output):
+    l1_loss = tf.reduce_mean(tf.abs(y_true - gen_output))
+    return l1_loss
+
+def g_loss(disc_generated_output, gen_output, target):
+    gan_loss = cross_entropy(tf.ones_like(disc_generated_output), disc_generated_output)
+    # mean absolute error
+    l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
+    total_gen_loss = gan_loss + (LAMBDA * l1_loss)
+    
+    return total_gen_loss
+
   
 class MySRGAN:   
     def __init__(self, g=None, d=None,
                  hr_shape=(None, None, 3),
                  lr_shape=(None, None, 3),
+                 L1_LOSS_ALPHA = 100,
                  GAN_LOSS_ALPHA = 0.001,
                  NUM_ITER = 1):
         
@@ -73,6 +91,7 @@ class MySRGAN:
             self.d, self.g = d, g
         
         self.GAN_LOSS_ALPHA = GAN_LOSS_ALPHA
+        self.L1_LOSS_ALPHA = L1_LOSS_ALPHA
         self.NUM_ITER = NUM_ITER
         
     def get_models(self):
@@ -85,88 +104,98 @@ class MySRGAN:
         self.metrics = metrics
         
         # Inputs
-        lr = tf.keras.layers.Input(shape=self.lr_shape)   # Input images from both domains
-        hr = tf.keras.layers.Input(shape=self.hr_shape)
+        input_image = tf.keras.layers.Input(shape=self.lr_shape)   # Input images from both domains
+        target = tf.keras.layers.Input(shape=self.hr_shape)
 
         # Build the critics
         self.g.trainable = False
         self.d.trainable = True
         
-        real_image = hr
-        fake_image = self.g(lr)
-        global_valid = self.d(real_image)
-        global_fake = self.d(fake_image)
-        
-        self.global_critic_model = tf.keras.Model(inputs=[lr, hr],
+        disc_real_output = self.d(target)
+        gen_output = self.g(input_image)
+        disc_generated_output = self.d(gen_output)
+
+        self.discriminator_model = tf.keras.Model(inputs=[input_image, target],
                                                   outputs=[
-                                                      global_valid, 
-                                                      global_fake
+                                                      disc_real_output, 
+                                                      disc_generated_output
                                                   ])
         
-        self.global_critic_model.compile(optimizer=optimizer,
+        self.discriminator_model.compile(optimizer=optimizer,
                                          loss=[
                                               cross_entropy,
                                               cross_entropy
                                          ],
-                                         loss_weights=[1,1])
+                                         loss_weights=[
+                                             1,
+                                             1
+                                         ])
         
         
         
         # Build the Generator
         self.d.trainable = False
         self.g.trainable = True
-        fake_image = self.g(lr)
-        global_valid = self.d(fake_image)
+        gen_output = self.g(input_image)
+        disc_generated_output = self.d(gen_output)
                
-        self.combined_generator_model = tf.keras.Model(inputs=lr, 
-                                                       outputs=[
-                                                         global_valid, 
-                                                         fake_image
-                                                       ])
+        self.generator_model = tf.keras.Model(inputs=[input_image], 
+                                             outputs=[
+                                                gen_output, 
+                                                disc_generated_output
+                                            ])
 
-        self.combined_generator_model.compile(optimizer=optimizer, 
+        self.generator_model.compile(optimizer=optimizer, 
                                               loss=[
-                                                cross_entropy,
-                                                'mse'
+                                                l1_loss,
+                                                cross_entropy
                                               ],
                                               loss_weights=[
-                                                self.GAN_LOSS_ALPHA, 
-                                                1
+                                                self.L1_LOSS_ALPHA,
+                                                1, 
                                               ])
         
     def validate(self, validation_steps):
         """Returns a dictionary of numpy scalars"""
         metrics_summary = {
             'd_loss': [],
-#             'd_val_loss': [],
-#             'd_inval_loss': [],
             'g_loss': [],
+            'l1_loss': [],
+            'g_gan_loss': [],
+            'd_real_loss': [],
+            'd_fake_loss': [],
         }
         
         for metric in self.metrics:
             metrics_summary[metric.__name__] = []
         
         for step in range(validation_steps):
-            lr, hr = next(self.dataset_val_next)
+            input_image, target = next(self.dataset_val_next)
 
-            d_global_loss = self.global_critic_model.test_on_batch([lr, hr], 
-                                                                    [np.ones((hr.shape[0],1)), # valid
-                                                                     np.zeros((hr.shape[0],1)), # invalid
-                                                                     ]) 
+            d_loss = self.discriminator_model.test_on_batch(x=[input_image, target], 
+                                                     y=[
+                                                        np.ones((target.shape[0],1)), # d_real_loss
+                                                        np.zeros((target.shape[0],1)), # d_generated_loss
+                                                        ]) 
 
-            g_loss = self.combined_generator_model.test_on_batch([lr, hr],
-                                                                 [np.ones((hr.shape[0],1)), # valid global
-                                                                  hr]) # mse loss
+            g_loss = self.generator_model.test_on_batch(x=[input_image],
+                                                        y=[
+                                                           target, # l1_loss
+                                                           np.ones((target.shape[0],1)), # g_gan_loss
+                                                           ]) 
             
             # Log important metrics
-            fake_B = self.g.predict(lr)
-            metrics_summary['d_loss'].append(d_global_loss[0]+d_global_loss[1])
-#             metrics_summary['d_val_loss'].append(d_global_loss[0])
-#             metrics_summary['d_inval_loss'].append(d_global_loss[1])
+            fake_B = self.g.predict(input_image)
+            metrics_summary['d_loss'].append(d_loss[0]+d_loss[1])
             metrics_summary['g_loss'].append(g_loss[0]+g_loss[1])
+            metrics_summary['l1_loss'].append(g_loss[0]/self.L1_LOSS_ALPHA)
+            metrics_summary['g_gan_loss'].append(g_loss[1])
+            metrics_summary['d_real_loss'].append(d_loss[0])
+            metrics_summary['d_fake_loss'].append(d_loss[1])
+
             
             for metric in self.metrics:
-                metrics_summary[metric.__name__].append(metric(hr, fake_B).numpy())
+                metrics_summary[metric.__name__].append(metric(target, fake_B).numpy())
                         
         # average all metrics
         for key, value in metrics_summary.items():
@@ -180,8 +209,10 @@ class MySRGAN:
             self.dataset_next = iter(dataset)
             metric_names = ['d_loss', 
                             'g_loss', 
-                            #'d_val_loss', 
-                            #'d_inval_loss'
+                            'l1_loss',
+                            'g_gan_loss',
+                            'd_real_loss',
+                            'd_fake_loss'
                            ]
             metric_names.extend([metric.__name__ for metric in self.metrics])
 
@@ -213,31 +244,33 @@ class MySRGAN:
                 for callback in callbacks: callback.on_batch_begin(step, logs=self.log)
                 
 #                 for i in range(self.NUM_ITER): # Train critics more than generator
-#                     lr, hr = next(self.dataset_next)
-#                     d_global_loss = self.global_critic_model.train_on_batch([lr, hr], 
-#                                                                             [np.ones((hr.shape[0],1)), # valid
-#                                                                              np.zeros((hr.shape[0],1)), # invalid
-#                                                                              ]) 
+#                     input_image, target = next(self.dataset_next)
+#                     d_loss = self.discriminator_model.train_on_batch(x=[input_image, target], 
+#                                                               y=[np.ones((target.shape[0],1)), # valid
+#                                                                  np.zeros((target.shape[0],1)), # invalid
+#                                                                 ]) 
                 
-                lr, hr = next(self.dataset_next)
-                d_global_loss = self.global_critic_model.train_on_batch([lr, hr], 
-                                                                        [np.ones((hr.shape[0],1)), # valid
-                                                                         np.zeros((hr.shape[0],1)), # invalid
-                                                                        ])
-                g_loss = self.combined_generator_model.train_on_batch([lr, hr],
-                                                                      [np.ones((hr.shape[0],1)), # valid 
-                                                                       hr, # MSE loss
-                                                                      ]) 
+                input_image, target = next(self.dataset_next)
+                d_loss = self.discriminator_model.train_on_batch(x=[input_image, target], 
+                                                                 y=[np.ones((target.shape[0],1)), # d_real_loss
+                                                                    np.zeros((target.shape[0],1)), # d_generated_loss
+                                                                    ])
+                g_loss = self.generator_model.train_on_batch(x=[input_image],
+                                                             y=[target,
+                                                                np.ones((target.shape[0],1)), # g_gan_loss 
+                                                                ]) 
                 
                 # Log important metrics
-                fake_image = self.g.predict(lr)
-                self.log['g_loss'] = g_loss[0] + g_loss[1]
-#                 self.log['d_val_loss'] = d_global_loss[0]
-#                 self.log['d_inval_loss'] = d_global_loss[1]
-                self.log['d_loss'] = d_global_loss[0]+d_global_loss[1]
+                fake_image = self.g.predict(input_image)
+                self.log['g_loss'] = g_loss[0]+g_loss[1]
+                self.log['d_loss'] = d_loss[0]+d_loss[1]
+                self.log['l1_loss'] = g_loss[0]/self.L1_LOSS_ALPHA
+                self.log['g_gan_loss'] = g_loss[1]
+                self.log['d_real_loss'] = d_loss[0]
+                self.log['d_fake_loss'] = d_loss[1]
                 
                 for metric in self.metrics:
-                    self.log[metric.__name__] = metric(hr, fake_image)
+                    self.log[metric.__name__] = metric(target, fake_image)
                 
                 for callback in callbacks: callback.on_batch_end(step, logs=self.log)
             
