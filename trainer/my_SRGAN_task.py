@@ -51,7 +51,7 @@ model = models.sisr.MySRGAN(hr_shape=(config.in_h, config.in_w, 3),
                             GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
                             NUM_ITER = config.NUM_ITER)
 generator_model, discriminator_model = model.get_models()
-model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.9), metrics=[utils.center_ssim, utils.center_psnr])
+model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.9), metrics=[utils.c_ssim, utils.c_psnr])
 
 # Callbacks
 write_freq = int(train_count/config.bs/10)
