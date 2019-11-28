@@ -19,8 +19,9 @@ class GenerateImages(tf.keras.callbacks.Callback):
         with self.summary_writer.as_default():
             tf.summary.image('{}/lr_image'.format(self.postfix), lr, step=self.step_count)
             tf.summary.image('{}/bicubic_image'.format(self.postfix), 
-                             tf.image.resize(lr, [tf.shape(hr)[0], tf.shape(hr)[1]], 
-                             method=tf.image.ResizeMethod.BICUBIC), 
+                             tf.image.resize(lr, 
+                                             [tf.shape(hr)[0], tf.shape(hr)[1]], 
+                                             method=tf.image.ResizeMethod.BICUBIC), 
                              step=self.step_count)
 
             tf.summary.image('{}/sr_image'.format(self.postfix), hr_pred, step=self.step_count)
