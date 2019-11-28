@@ -19,30 +19,30 @@ from trainer import utils
 
 
 #Load VGG model
-from tensorflow.keras import models, optimizers, metrics
-from tensorflow.keras.applications.vgg19 import preprocess_input
-vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet', input_shape = [224,224,3])
-vgg.trainable = False
-content_layers = 'block5_conv2'
+# from tensorflow.keras import models, optimizers, metrics
+# from tensorflow.keras.applications.vgg19 import preprocess_input
+# vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet', input_shape = [224,224,3])
+# vgg.trainable = False
+# content_layers = 'block5_conv2'
 
-lossModel = models.Model([vgg.input], vgg.get_layer(content_layers).output, name = 'vggL')
+# lossModel = models.Model([vgg.input], vgg.get_layer(content_layers).output, name = 'vggL')
 
-def _lossMSE(y_true, y_pred):
-  return tf.reduce_mean(tf.square(y_true - y_pred))
+# def _lossMSE(y_true, y_pred):
+#   return tf.reduce_mean(tf.square(y_true - y_pred))
 
-def _lossVGG(y_true, y_pred):
-  Xt = preprocess_input(y_pred*255)
-  Yt = preprocess_input(y_true*255)
-  vggX = lossModel(Xt)
-  vggY = lossModel(Yt)
-  return tf.reduce_mean(tf.square(vggY-vggX))
+# def _lossVGG(y_true, y_pred):
+#   Xt = preprocess_input(y_pred*255)
+#   Yt = preprocess_input(y_true*255)
+#   vggX = lossModel(Xt)
+#   vggY = lossModel(Yt)
+#   return tf.reduce_mean(tf.square(vggY-vggX))
 
-def _lossGAN(y_pred):
-  """
-    params:
-    X: hr_pred
-  """
-  return tf.sum(-1*tf.math.log(D(y_pred)))
+# def _lossGAN(y_pred):
+#   """
+#     params:
+#     X: hr_pred
+#   """
+#   return tf.sum(-1*tf.math.log(D(y_pred)))
 
 LAMBDA = 100
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -111,8 +111,8 @@ class MySRGAN:
         self.g.trainable = False
         self.d.trainable = True
         
-        gen_output = self.g(input_image)
         disc_real_output = self.d(target)
+        gen_output = self.g(input_image)
         disc_generated_output = self.d(gen_output)
 
         self.discriminator_model = tf.keras.Model(inputs=[input_image, target],
@@ -123,10 +123,13 @@ class MySRGAN:
         
         self.discriminator_model.compile(optimizer=optimizer,
                                          loss=[
-                                              d_real_loss,
-                                              d_generated_loss
+                                              cross_entropy,
+                                              cross_entropy
                                          ],
-                                         loss_weights=[1,1])
+                                         loss_weights=[
+                                             1,
+                                             1
+                                         ])
         
         
         
@@ -145,7 +148,7 @@ class MySRGAN:
         self.generator_model.compile(optimizer=optimizer, 
                                               loss=[
                                                 l1_loss,
-                                                g_gan_loss
+                                                cross_entropy
                                               ],
                                               loss_weights=[
                                                 self.L1_LOSS_ALPHA,
@@ -170,22 +173,22 @@ class MySRGAN:
             input_image, target = next(self.dataset_val_next)
 
             d_loss = self.discriminator_model.test_on_batch(x=[input_image, target], 
-                                                     y=[np.ones((target.shape[0],1)), # d_real_loss
+                                                     y=[
+                                                        np.ones((target.shape[0],1)), # d_real_loss
                                                         np.zeros((target.shape[0],1)), # d_generated_loss
-                                                        ]
-                                                    ) 
+                                                        ]) 
 
             g_loss = self.generator_model.test_on_batch(x=[input_image],
-                                                        y=[target, # l1_loss
+                                                        y=[
+                                                           target, # l1_loss
                                                            np.ones((target.shape[0],1)), # g_gan_loss
-                                                           ]
-                                                    ) 
+                                                           ]) 
             
             # Log important metrics
             fake_B = self.g.predict(input_image)
             metrics_summary['d_loss'].append(d_loss[0]+d_loss[1])
-            metrics_summary['g_loss'].append(self.L1_LOSS_ALPHA*g_loss[0]+g_loss[1])
-            metrics_summary['l1_loss'].append(g_loss[0])
+            metrics_summary['g_loss'].append(g_loss[0]+g_loss[1])
+            metrics_summary['l1_loss'].append(g_loss[0]/self.L1_LOSS_ALPHA)
             metrics_summary['g_gan_loss'].append(g_loss[1])
             metrics_summary['d_real_loss'].append(d_loss[0])
             metrics_summary['d_fake_loss'].append(d_loss[1])
@@ -249,19 +252,19 @@ class MySRGAN:
                 
                 input_image, target = next(self.dataset_next)
                 d_loss = self.discriminator_model.train_on_batch(x=[input_image, target], 
-                                                                        y=[np.ones((target.shape[0],1)), # valid
-                                                                         np.zeros((target.shape[0],1)), # invalid
-                                                                        ])
+                                                                 y=[np.ones((target.shape[0],1)), # d_real_loss
+                                                                    np.zeros((target.shape[0],1)), # d_generated_loss
+                                                                    ])
                 g_loss = self.generator_model.train_on_batch(x=[input_image],
                                                              y=[target,
-                                                                np.ones((target.shape[0],1)), # valid 
+                                                                np.ones((target.shape[0],1)), # g_gan_loss 
                                                                 ]) 
                 
                 # Log important metrics
                 fake_image = self.g.predict(input_image)
-                self.log['g_loss'] = self.L1_LOSS_ALPHA * g_loss[0] + g_loss[1]
+                self.log['g_loss'] = g_loss[0]+g_loss[1]
                 self.log['d_loss'] = d_loss[0]+d_loss[1]
-                self.log['l1_loss'] = g_loss[0]
+                self.log['l1_loss'] = g_loss[0]/self.L1_LOSS_ALPHA
                 self.log['g_gan_loss'] = g_loss[1]
                 self.log['d_real_loss'] = d_loss[0]
                 self.log['d_fake_loss'] = d_loss[1]

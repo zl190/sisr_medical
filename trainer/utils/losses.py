@@ -2,20 +2,20 @@ import tensorflow as tf
 
 def mse(y_true, y_pred): return tf.keras.losses.MSE(y_true, y_pred)
 def mae(y_true, y_pred): return tf.keras.losses.MAE(y_true, y_pred)
-def center_mse(y_true, y_pred): 
+def c_mse(y_true, y_pred): 
     y_true_c = tf.image.central_crop(y_true, 0.9)
     y_pred_c = tf.image.central_crop(y_pred, 0.9)
     return tf.keras.losses.MSE(y_true_c, y_pred_c)
 
 def ssim_multiscale(y_true, y_pred): return tf.image.ssim_multiscale(y_true, y_pred, 1)
 def ssim(y_true, y_pred): return tf.image.ssim(y_true, y_pred, 1)
-def center_ssim(y_true, y_pred): 
+def c_ssim(y_true, y_pred): 
     y_true_c = tf.image.central_crop(y_true, 0.9)
     y_pred_c = tf.image.central_crop(y_pred, 0.9)
     return tf.image.ssim(y_true_c, y_pred_c, 1)
 
 def psnr(y_true, y_pred): return tf.image.psnr(y_true, y_pred, 1)
-def center_psnr(y_true, y_pred): 
+def c_psnr(y_true, y_pred): 
     y_true_c = tf.image.central_crop(y_true, 0.9)
     y_pred_c = tf.image.central_crop(y_pred, 0.9)
     return tf.image.psnr(y_true_c, y_pred_c, 1)
