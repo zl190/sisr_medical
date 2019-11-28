@@ -14,7 +14,7 @@ class MySRResNet(tf.keras.Model):
     self.conv21a = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn21a = tf.keras.layers.BatchNormalization()
     self.prelu21a = tf.keras.layers.PReLU(alpha_initializer='zeros')
-    self.conv21b = tf.keras.layers.Conv2D(64, 3, padding='same')
+    self.conv21b = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn21b = tf.keras.layers.BatchNormalization()
     
     self.x21_append = tf.keras.layers.Conv2D(64, 1, 1, padding='same', use_bias=False)
@@ -25,7 +25,7 @@ class MySRResNet(tf.keras.Model):
     self.conv22a = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn22a = tf.keras.layers.BatchNormalization()
     self.prelu22a = tf.keras.layers.PReLU(alpha_initializer='zeros')
-    self.conv22b = tf.keras.layers.Conv2D(64, 3, padding='same')
+    self.conv22b = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn22b = tf.keras.layers.BatchNormalization()
     
     self.x22_append = tf.keras.layers.Conv2D(64, 1, 1, padding='same', use_bias=False)
@@ -35,7 +35,7 @@ class MySRResNet(tf.keras.Model):
     self.conv23a = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn23a = tf.keras.layers.BatchNormalization()
     self.prelu23a = tf.keras.layers.PReLU(alpha_initializer='zeros')
-    self.conv23b = tf.keras.layers.Conv2D(64, 3, padding='same')
+    self.conv23b = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn23b = tf.keras.layers.BatchNormalization()
     
     self.x23_append = tf.keras.layers.Conv2D(64, 1, 1, padding='same', use_bias=False)
@@ -46,7 +46,7 @@ class MySRResNet(tf.keras.Model):
     self.conv24a = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn24a = tf.keras.layers.BatchNormalization()
     self.prelu24a = tf.keras.layers.PReLU(alpha_initializer='zeros')
-    self.conv24b = tf.keras.layers.Conv2D(64, 3, padding='same')
+    self.conv24b = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn24b = tf.keras.layers.BatchNormalization()
     
     self.x24_append = tf.keras.layers.Conv2D(64, 1, 1, padding='same', use_bias=False)
@@ -57,7 +57,7 @@ class MySRResNet(tf.keras.Model):
     self.conv25a = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn25a = tf.keras.layers.BatchNormalization()
     self.prelu25a = tf.keras.layers.PReLU(alpha_initializer='zeros')
-    self.conv25b = tf.keras.layers.Conv2D(64, 3, padding='same')
+    self.conv25b = tf.keras.layers.Conv2D(64, 3, 1, padding='same')
     self.bn25b = tf.keras.layers.BatchNormalization()
     
     self.x25_append = tf.keras.layers.Conv2D(64, 1, 1, padding='same', use_bias=False)
@@ -79,11 +79,6 @@ class MySRResNet(tf.keras.Model):
 
     # conv5, k9n3s1
     self.conv5 = tf.keras.layers.Conv2D(3, 9, 1, padding='same')
-
-    # self.avgpool = tf.keras.layers.AvgPool2D(3, 2)
-    # self.flatten = tf.keras.layers.Flatten()
-    # self.dense = tf.keras.layers.Dense(37, activation='softmax')
-
     
 
   def call(self, input_tensor, training=False):
@@ -215,7 +210,7 @@ class Discriminator(tf.keras.Model):
     self.leakyrelu27 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
     self.flatten = tf.keras.layers.Flatten()
-    self.dense1 = tf.keras.layers.Dense(1024, activation='softmax')
+    self.dense1 = tf.keras.layers.Dense(1024)
     self.leakyrelu3 = tf.keras.layers.LeakyReLU(alpha=0.2)
     self.dense2 = tf.keras.layers.Dense(1, activation='sigmoid')
     
@@ -250,14 +245,14 @@ class Discriminator(tf.keras.Model):
     x = self.leakyrelu25(x)            
 
     # conv2_6, k3n512s1
-    x = self.conv25(x)           
-    x = self.bn25(x)                
-    x = self.leakyrelu25(x)            
+    x = self.conv26(x)           
+    x = self.bn26(x)                
+    x = self.leakyrelu26(x)            
 
     # conv2_7, k3n512s2 -- end of B residual block
-    x = self.conv25(x)           
-    x = self.bn25(x)                
-    x = self.leakyrelu25(x)            
+    x = self.conv27(x)           
+    x = self.bn27(x)                
+    x = self.leakyrelu27(x)            
 
     x = self.flatten(x)
     x = self.dense1(x)
