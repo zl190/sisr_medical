@@ -20,7 +20,7 @@ def get_oxford_iiit_pet_dataset(train_type='train', size=(224, 224, 3), downsamp
         dataset = dataset.map(normalize, 
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
     elif train_type == 'test':
-        dataset = dataset.map(lambda x: tf.image.resize(x['image'], size[0], size[1]), 
+        dataset = dataset.map(lambda x: tf.image.resize(x['image'], [size[0], size[1]]), 
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
         dataset = dataset.map(normalize,
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
