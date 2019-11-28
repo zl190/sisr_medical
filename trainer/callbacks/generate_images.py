@@ -18,8 +18,13 @@ class GenerateImages(tf.keras.callbacks.Callback):
         hr_pred = self.forward.predict(lr)
         with self.summary_writer.as_default():
             tf.summary.image('{}/lr_image'.format(self.postfix), lr, step=self.step_count)
-            tf.summary.image('{}/hr_pred_image'.format(self.postfix), hr_pred, step=self.step_count)
-            tf.summary.image('{}/hr_image'.format(self.postfix), hr, step=self.step_count)
+            tf.summary.image('{}/bicubic_image'.format(self.postfix), 
+                             tf.image.resize(lr, [tf.shape(hr)[0], tf.shape(hr)[1]], 
+                             method=tf.image.ResizeMethod.BICUBIC), 
+                             step=self.step_count)
+
+            tf.summary.image('{}/sr_image'.format(self.postfix), hr_pred, step=self.step_count)
+            tf.summary.image('{}/original_image'.format(self.postfix), hr, step=self.step_count)
 
     def on_batch_begin(self, batch, logs={}):
         self.step_count += 1
