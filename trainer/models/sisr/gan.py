@@ -85,8 +85,8 @@ class MySRGAN:
         self.lr_shape = lr_shape
         
         if g is None or d is None:
-            self.d = Discriminator()
-            self.g = MySRResNet()
+            self.d = Discriminator(self.hr_shape)
+            self.g = MySRResNet(self.lr_shape)
         else:
             self.d, self.g = d, g
         
