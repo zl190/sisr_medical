@@ -6,7 +6,7 @@ class MySRResNet():
     self.shape = shape
     
 
-  def call(self):
+  def __call__(self):
     input_tensor = tf.keras.layers.Input(shape=self.shape)
     x1 = tf.keras.layers.Conv2D(64, 9, 1, padding='same')(input_tensor)
     x1 = tf.keras.layers.PReLU(alpha_initializer='zeros')(x1)
@@ -97,7 +97,7 @@ class Discriminator():
     self.shape = shape
     
 
-  def call(self):
+  def __call__(self):
     input_tensor = tf.keras.layers.Input(shape=self.shape) 
     x = tf.keras.layers.Conv2D(64, 3, 1, padding='same')(input_tensor)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
