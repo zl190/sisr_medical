@@ -43,7 +43,7 @@ validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('tes
 
 
 # Compile model
-generator_model = models.sisr.MySRResNet()
+generator_model = models.sisr.MySRResNet(shape=(config.in_lh, config.in_lw, 3))()
 generator_model.compile(optimizer=tf.keras.optimizers.Adam(config.lr), 
                         loss=[utils.mae],
                         loss_weights = [1.0], # Weights for x1_ae, x2_ae, x1_local, x2_local
