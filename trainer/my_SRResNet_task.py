@@ -17,8 +17,6 @@ if __name__ == '__main__':
     parser.add_argument('--lr',       type=float, help='learning rate')
 
     # GAN Params
-    parser.add_argument('--WGAN_GP_LAMBDA',  type=float, help='gradient penalty importance')
-    parser.add_argument('--COARSE_L1_ALPHA', type=float, help='importance of coarse l1')
     parser.add_argument('--L1_LOSS_ALPHA',   type=float, help='importance of fine l1')
     parser.add_argument('--AE_LOSS_ALPHA',   type=float, help='importance of full reconstruction')
     parser.add_argument('--GAN_LOSS_ALPHA',  type=float, help='importance of GAN loss')
@@ -47,9 +45,9 @@ validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('tes
 # Compile model
 generator_model = models.sisr.MySRResNet()
 generator_model.compile(optimizer=tf.keras.optimizers.Adam(config.lr), 
-                        loss=[utils.mse],
+                        loss=[utils.mae],
                         loss_weights = [1.0], # Weights for x1_ae, x2_ae, x1_local, x2_local
-                        metrics=[utils.ssim, utils.psnr],
+                        metrics=[utils.c_ssim, utils.c_psnr],
                         )
 
 # Callbacks
