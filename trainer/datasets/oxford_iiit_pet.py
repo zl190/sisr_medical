@@ -15,9 +15,10 @@ def get_oxford_iiit_pet_dataset(train_type='train', size=(224, 224, 3), downsamp
 #     dataset = dataset.map(lambda x: tf.cast(x, dtype=tf.float32)/255.0, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if train_type == 'train':
-        dataset = dataset.map(random_jitter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.map(lambda x: random_jitter(x['image']), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     elif train_type == 'test':
-        dataset = dataset.map(resize, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.map(lambda x: tf.image.resize(x['image'], size[0], size[1]), 
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.repeat().batch(batch_size).prefetch(16)
     dataset = dataset.map(lambda x: get_LR_HR_pair(x, downsampling_factor), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
@@ -42,8 +43,8 @@ def normalize(image):
 
     
 
-def resize(input_image):
-    input_image = tf.image.resize(input_image, [IMG_HEIGHT, IMG_WIDTH],
+def resize(input_image, height, width):
+    input_image = tf.image.resize(input_image, [height, width],
                                 method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     return input_image
