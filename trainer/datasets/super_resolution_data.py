@@ -3,6 +3,44 @@ import tensorflow as tf
 from trainer.utils.bicubic_downsample import build_filter, apply_bicubic_downsample
 
 
+def get_oxford_iiit_pet_dataset_for_D(train_type='train', size=(224, 224, 3), downsampling_factor=4, batch_size=32):
+    count = {
+        'test': 3669,
+        'train': 3680,
+    }
+
+    data = tfds.load('oxford_iiit_pet')
+    dataset = data[train_type]
+    
+
+    if train_type == 'train':
+        dataset = dataset.map(lambda x: random_jitter(x['image'], size), 
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.map(normalize, 
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    elif train_type == 'test':
+        dataset = dataset.map(lambda x: tf.image.resize(x['image'], [size[0], size[1]]), 
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        dataset = dataset.map(normalize,
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    
+    # downsampling
+    dataset_lr = dataset.map(lambda x: get_lr(x, downsampling_factor), 
+                             num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    # build bicubic data with label
+    dataset_bicubic = dataset_lr.map(lambda x: (tf.image.resize(x,[size[0], size[1]], method=tf.image.ResizeMethod.BICUBIC), 0))
+    # build hr data with label
+    dataset = dataset.map(lambda x: (x, 1))   
+    
+    dataset = dataset.concatenate(dataset_bicubic)
+    dataset = dataset.shuffle(buffer_size=count[train_type]*2) 
+    
+    dataset = dataset.repeat().batch(batch_size).prefetch(8)
+
+    dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+    return dataset, count[train_type]
+
+
 def get_oxford_iiit_pet_dataset(train_type='train', size=(224, 224, 3), downsampling_factor=4, batch_size=32):
     count = {
         'test': 3669,
@@ -30,7 +68,6 @@ def get_oxford_iiit_pet_dataset(train_type='train', size=(224, 224, 3), downsamp
     return dataset, count[train_type]
 
 
-
 def get_coco_dataset(train_type='train', size=(224, 224, 3), downsampling_factor=4, batch_size=32):
     count = {
         'validation': 5000, 
@@ -55,6 +92,18 @@ def get_coco_dataset(train_type='train', size=(224, 224, 3), downsampling_factor
     dataset = dataset.map(lambda x: get_LR_HR_pair(x, downsampling_factor), num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
     return dataset, count[train_type]
+
+
+def get_lr(hr, downsampling_factor=4):
+    """Downsample x which is a tensor with shape [N, H, W, 3]
+
+    """
+    hr = tf.expand_dims(hr, 0)
+    k = build_filter(factor=4)
+    lr = apply_bicubic_downsample(hr, filter=k, factor=4)
+    lr = normalize(lr)
+    lr = tf.squeeze(lr)
+    return lr
 
 
 def get_LR_HR_pair(hr, downsampling_factor=4):
