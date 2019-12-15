@@ -45,7 +45,7 @@ from trainer import utils
 #   return tf.sum(-1*tf.math.log(D(y_pred)))
 
 LAMBDA = 100
-cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
 
 def d_real_loss(y_true, disc_real_output):
