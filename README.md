@@ -20,6 +20,7 @@ To train srgan, using
 python3 -m trainer.srresnet_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
 ```
 
+More custom training parameters can be set by reading the configuration file: `trainer/config.py`
 
 ## License
 Copyright 2019 Zisheng Liang
