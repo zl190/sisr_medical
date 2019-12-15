@@ -11,10 +11,14 @@ The above shows an example outcome of the srgan model. The training dataset is o
 The repo was designed to be run in Google Cloud and makes use of GCS for logging. It contains two training tasks, which are srresnet and srgan. srresnet is the generator of the srgan.
 
 To train srresnet, using
-`python3 -m trainer.srgan_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'`
+```
+python3 -m trainer.srgan_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
+```
 
 To train srgan, using
-`python3 -m trainer.srresnet_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'`
+```
+python3 -m trainer.srresnet_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
+```
 
 
 ## License
