@@ -1,5 +1,5 @@
 # Single Image Super Resolution
-![example result of srgan](link-to-image)
+![example result of srgan](examples/sisr_example.png)
 ## Quick Start
 
 ### Training the model from scratch
