@@ -1,2 +1,4 @@
-#from trainer.datasets.oxford_iiit_pet import get_oxford_iiit_pet_dataset
-from trainer.datasets.super_resolution_data import get_coco_dataset, get_oxford_iiit_pet_dataset, get_oxford_iiit_pet_dataset_for_D
+from datasets import get_dataset
+from trainer.datasets.oxford_iiit_pet import get_oxford_iiit_pet_dataset
+from trainer.datasets.oxford_iiit_pet_D import get_oxford_iiit_pet_dataset_D
+from trainer.datasets.coco import get_coco_dataset
