@@ -17,6 +17,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr',       type=float, help='learning rate')
 
     # GAN Params
+    parser.add_argument('--WGAN_GP_LAMBDA',  type=float, help='gradient penalty importance')
+    parser.add_argument('--COARSE_L1_ALPHA', type=float, help='importance of coarse l1')
     parser.add_argument('--L1_LOSS_ALPHA',   type=float, help='importance of fine l1')
     parser.add_argument('--AE_LOSS_ALPHA',   type=float, help='importance of full reconstruction')
     parser.add_argument('--GAN_LOSS_ALPHA',  type=float, help='importance of GAN loss')
@@ -38,44 +40,57 @@ if __name__ == '__main__':
             setattr(config, key, parser.get_default(key))
 
 # Prepare data
-train_dataset, train_count = datasets.get_oxford_iiit_pet_dataset_for_D('train', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
-validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset_for_D('test', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
+train_dataset, train_count = datasets.get_oxford_iiit_pet_dataset('train', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
+validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset('test', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
 
+# load pretrained generator
+d = models.sisr.Discriminator(shape = (config.in_h, config.in_w, 3))()
+g = tf.keras.models.load_model(config.pretrained_model_path, 
+                               custom_objects={"c_ssim": utils.c_ssim, "c_psnr":utils.c_psnr})
 
+#d.name = 'd1'
+g._name = 'g1'
 # Compile model
-d_model = models.sisr.Discriminator(shape=(config.in_h, config.in_w, 3))()
-
-d_model.compile(optimizer=tf.keras.optimizers.Adam(config.lr), 
-                        loss=[tf.keras.losses.BinaryCrossentropy()],
-                        metrics=[tf.keras.metrics.Accuracy()],
-                        )
+model = models.sisr.MyDiscriminator(g=g, 
+                            d=d,
+                            hr_shape=(config.in_h, config.in_w, 3), 
+                            lr_shape=(config.in_lh, config.in_lw, 3),
+                            L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
+                            GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
+                            NUM_ITER = config.NUM_ITER)
+generator_model, discriminator_model = model.get_models()
+model.compile(optimizer=tf.keras.optimizers.Adam(config.lr, beta_1=0.5))
 
 # Callbacks
 write_freq = int(train_count/config.bs/10)
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
+prog_bar = tf.keras.callbacks.ProgbarLogger(count_mode='steps', stateful_metrics=None)
+#saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_g_loss:.5f}.hdf5', monitor='val_d_loss', verbose=1, save_freq='epoch', save_best_only=False)
 
-#saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/model.{epoch:02d}-{val_loss:.5f}.hdf5', monitor='val_loss', verbose=1, save_freq='epoch', save_best_only=False)
+start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
+#save_multi_model = callbacks.SaveMultiModel([('g', generator_model), ('d', discriminator_model)], config.model_dir)
 
 log_code = callbacks.LogCode(config.job_dir, './trainer')
 #copy_keras = callbacks.CopyKerasModel(config.model_dir, config.job_dir)
 
-#image_gen_val = callbacks.GenerateImages(generator_model, validation_dataset, config.job_dir, interval=write_freq, postfix='val')
-#image_gen = callbacks.GenerateImages(generator_model, train_dataset, config.job_dir, interval=write_freq, postfix='train')
-start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
+# image_gen_val = callbacks.GenerateImages(generator_model, validation_dataset, config.job_dir, interval=write_freq, postfix='val')
+# image_gen = callbacks.GenerateImages(generator_model, train_dataset, config.job_dir, interval=write_freq, postfix='train')
 
 # Fit model
-d_model.fit(train_dataset,
-                    steps_per_epoch=int(train_count/config.bs),
-                    epochs=config.epochs,
-                    validation_data=validation_dataset,
-                    validation_steps=int(validation_count/config.bs),
-                    verbose=1,
-                    callbacks=[
-                      log_code, 
-                      start_tensorboard, 
-                      tensorboard, 
-                      #image_gen, 
-                      #image_gen_val, 
-                      #saving, 
-                      #copy_keras
-                    ])
+model.fit(train_dataset,
+          steps_per_epoch=int(train_count/config.bs),
+          epochs=config.epochs,
+          validation_data=validation_dataset,
+          validation_steps=int(validation_count/config.bs),
+          verbose=1,
+          callbacks=[
+            log_code, 
+            prog_bar, 
+            start_tensorboard, 
+            tensorboard,      
+#             image_gen, 
+#             image_gen_val, 
+#             saving, 
+#             save_multi_model, 
+#             copy_keras
+          ])

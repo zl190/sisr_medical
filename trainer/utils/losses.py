@@ -2,6 +2,7 @@ import tensorflow as tf
 
 
 def accuracy(y_true, y_pred): return tf.keras.metrics.Accuracy(y_true, y_pred)
+def binary_crossentropy(y_true, y_pred): return tf.keras.losses.binary_crossentropy(y_true, y_pred)
 def mse(y_true, y_pred): return tf.keras.losses.MSE(y_true, y_pred)
 def mae(y_true, y_pred): return tf.keras.losses.MAE(y_true, y_pred)
 def c_mse(y_true, y_pred): 

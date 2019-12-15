@@ -9,10 +9,11 @@ def get_oxford_iiit_pet_dataset_for_D(train_type='train', size=(224, 224, 3), do
         'train': 3680,
     }
 
+    # load data
     data = tfds.load('oxford_iiit_pet')
     dataset = data[train_type]
     
-
+    # augment/resize, normalize
     if train_type == 'train':
         dataset = dataset.map(lambda x: random_jitter(x['image'], size), 
                               num_parallel_calls=tf.data.experimental.AUTOTUNE)
@@ -27,14 +28,15 @@ def get_oxford_iiit_pet_dataset_for_D(train_type='train', size=(224, 224, 3), do
     # downsampling
     dataset_lr = dataset.map(lambda x: get_lr(x, downsampling_factor), 
                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    # build bicubic data with label
+    # label bicubic data
     dataset_bicubic = dataset_lr.map(lambda x: (tf.image.resize(x,[size[0], size[1]], method=tf.image.ResizeMethod.BICUBIC), 0))
-    # build hr data with label
+    # label hr data 
     dataset = dataset.map(lambda x: (x, 1))   
     
-    dataset = dataset.concatenate(dataset_bicubic)
-    dataset = dataset.shuffle(buffer_size=count[train_type]*2) 
-    
+    # interleaves elements from datasets at random
+    dataset = tf.data.experimental.sample_from_datasets([dataset, dataset_bicubic])
+#     dataset = dataset.concatenate(dataset_bicubic)
+#     dataset = dataset.shuffle(buffer_size=count[train_type]*2) 
     dataset = dataset.repeat().batch(batch_size).prefetch(8)
 
     dataset = dataset.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
