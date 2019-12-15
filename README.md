@@ -10,22 +10,22 @@ The above shows an example outcome of the srgan model. The training dataset is o
 ### Training the model from scratch
 The repo was designed to be run in Google Cloud and makes use of GCS for logging. It contains three training tasks, which are `srresnet_task`, `discriminator_task` and `srgan_task`. `srresnet_task` trains the generator of the srgan solely, `discriminator_task` trains the discriminator of the srgan solely and `srgan_task` trains both the generator and the discriminator jointly.
 
-To train srresnet, using
+To train the srresnet, the generator solely, using
 ```
 python3 -m trainer.srgan_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
 ```
 
-To train discriminator, using
+To train the discriminator solely, using
 ```
 python3 -m trainer.discriminator_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
 ```
 
-To train srgan, using
+To train srgan, the generator and discriminator jointly, using
 ```
 python3 -m trainer.srgan_task --job-dir 'gs://<project>/<path to store tensorboard jobs>'
 ```
 
-To use pretrained weight, specify the weight paths by set `g_weight` and `d_weight`, for example
+To use pretrained weight, specify the weight paths by setting the parameters: `g_weight` and `d_weight`. E.g.
 ```
 python3 -m trainer.srgan_task --g_weight '<pretrained generator weight path>' --d_weight 'pretrained discriminator weight path' --job-dir 'gs://<project>/<path to store tensorboard jobs>'
 ```
