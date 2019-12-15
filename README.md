@@ -1,5 +1,10 @@
 # Single Image Super Resolution
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![example result of srgan](examples/sisr_example.png)
+
+The above shows an example outcome of the srgan model. The training dataset is oxford_iiit_pet. To do the training, I pretrained the generator and the discriminator. 
+
 ## Quick Start
 
 ### Training the model from scratch
