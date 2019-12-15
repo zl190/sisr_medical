@@ -22,7 +22,7 @@ else:
 write_freq = int(train_count/config.bs/10)
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
 
-saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/d_c_model.{epoch:02d}-{val_loss:.5f}.hdf5', monitor='val_loss', verbose=1, save_freq='epoch', save_best_only=False)
+saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/d' + '/model.{epoch:02d}-{val_loss:.5f}.hdf5', monitor='val_loss', verbose=1, save_freq='epoch', save_best_only=False)
 
 log_code = callbacks.LogCode(config.job_dir, './trainer')
 #copy_keras = callbacks.CopyKerasModel(config.model_dir, config.job_dir)
