@@ -6,6 +6,9 @@
 The above shows an example outcome of the CT-adapted [SISR](https://github.com/jason-zl190/sisr.git) model. The [dataset](https://github.com/jason-zl190/datasets.git) is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
 
 ## Adaptd Model
+<p align="center">
+  <img src="examples/degradation_model_ct.png" alt="CT scan degradation model"/>
+</p>
 ![CT scan degradation model](examples/degradation_model_ct.png)
 
 Degradation of natural optical image, like an image captured by a phone's camera, happens in spatial space. On the contray, degradation of CT scans happen in radom space according of FBP(filtered back projection) reconstruction process. Therefore, the low resolution obervations of CT scan can be obtained by above degration model.
