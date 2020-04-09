@@ -5,7 +5,10 @@
 
 The above figure shows an example outcome of the CT-adapted [SISR](https://github.com/jason-zl190/sisr.git) model. The [dataset](https://github.com/jason-zl190/datasets.git) is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
 
-## Adaptd Model
+
+## Quick Start
+
+### Adaptd Model
 <p align="center">
   <img src="examples/degradation_model_ct.png" alt="CT scan degradation model"/>
 </p>
@@ -18,7 +21,12 @@ Degradation of an optical image, like a phone camera captured image, happens in 
 
 The above figure shows two SISR model structures. The original model is shown on the top. The CT-adapted SISR model is shown on the bottom.
 
-## Quick Start
+### Metrics
+
+| NIH Deeplesion(CT)  | Bicubic           | SRResNet/SRGAN  | HR |
+| :-------------:     |:-------------:    | :-----:         |:--:|
+| PSNR                | 13.32             | 31.24           | \infty |
+| SSIM                | 0.40              |   0.86          | 1  |
 
 ### Training the model from scratch
 The repo was designed to be run in Google Cloud and makes use of GCS for logging. 
