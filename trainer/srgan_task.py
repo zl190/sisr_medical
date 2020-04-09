@@ -13,30 +13,32 @@ limitations under the License.
 
 
 import tensorflow as tf
-from trainer import utils, models, callbacks, datasets, config
+from trainer import utils, callbacks, config
+from trainer.models.sisr_ct import MySRGAN
+from trainer.datasets.sisr_ct import deeplesion_lr_hr_pair
 import os
 
 # dataset
-train_dataset, train_count = datasets.deeplesion_lr_hr_pair(split='train', 
-                                                           size=(config.im_h, config.im_w, 1), 
-                                                           downsampling_factor=config.upsampling_rate, 
-                                                           batch_size=config.batch_size, 
-                                                           augment=False, 
+train_dataset, train_count = deeplesion_lr_hr_pair(split='train', 
+                                                   size=(config.im_h, config.im_w, 1), 
+                                                   downsampling_factor=config.upsampling_rate, 
+                                                   batch_size=config.batch_size, 
+                                                   augment=False, 
                                                    data_dir = config.data_dir)
-validation_dataset, validation_count = datasets.deeplesion_lr_hr_pair(split='validation', 
-                                                                     size=(config.im_h, config.im_w, 1), 
-                                                                     downsampling_factor=config.upsampling_rate, 
-                                                                     batch_size=config.batch_size, 
-                                                                     augment=False, 
-                                                                     data_dir = config.data_dir)
+validation_dataset, validation_count = deeplesion_lr_hr_pair(split='validation', 
+                                                             size=(config.im_h, config.im_w, 1), 
+                                                             downsampling_factor=config.upsampling_rate, 
+                                                             batch_size=config.batch_size, 
+                                                             augment=False, 
+                                                             data_dir = config.data_dir)
 
 # Compile or load the model
 if config.g_weight == None or config.d_weight == None:
-    model = models.sisr.MySRGAN(shape=(config.im_h, config.im_w, 1), 
-                                upsampling_rate=config.upsampling_rate,
-                                L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
-                                GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
-                                )
+    model = MySRGAN(shape=(config.im_h, config.im_w, 1), 
+                    upsampling_rate=config.upsampling_rate,
+                    L1_LOSS_ALPHA = config.L1_LOSS_ALPHA,
+                    GAN_LOSS_ALPHA = config.GAN_LOSS_ALPHA,
+                    )
 else:
     d = tf.keras.models.load_model(config.d_weight, compile=False)
     g = tf.keras.models.load_model(config.g_weight, 

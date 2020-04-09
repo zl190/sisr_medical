@@ -12,11 +12,10 @@ for k, v in env_path.items():
     sys.path.insert(0, v)
 
 import tensorflow as tf
-from trainer import utils, models, callbacks, datasets, config
-from trainer.models.sisr import MySRResNet, Discriminator
+from trainer import utils, callbacks, config
+from trainer.models.sisr_ct import MySRResNet, Discriminator
+from trainer.datasets.sisr_ct import deeplesion_lr_hr_pair
 from pathlib import Path
-
-_DATA_DIR = '/datacommons/plusds/team10-zl190/Spring20/tensorflow_datasets' # data_dir
 
 
 def load_clf_data(split, batch_size, weak_model):

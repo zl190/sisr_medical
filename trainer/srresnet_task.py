@@ -13,8 +13,8 @@ limitations under the License.
 
 import tensorflow as tf
 from trainer import utils, callbacks, config
-from trainer.datasets import deeplesion_lr_hr_pair
-from trainer.models.sisr import MySRResNet
+from trainer.datasets.sisr_ct import deeplesion_lr_hr_pair
+from trainer.models.sisr_ct import MySRResNet
 import os
 from pathlib import Path
 

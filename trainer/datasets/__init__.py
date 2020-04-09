@@ -1,1 +1,2 @@
-from trainer.datasets.Deeplesion import deeplesion_lr_hr_pair
+from trainer.datasets.sisr_ct import deeplesion_lr_hr_pair
+from trainer.datasets.sisr_ultrasound import duke_ultrasound_lr_hr_pair

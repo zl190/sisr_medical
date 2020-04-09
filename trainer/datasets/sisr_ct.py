@@ -36,33 +36,33 @@ def deeplesion(config_name='abnormal',
   Returns:
     `tuple`, (tf.data.Dataset, number of examples)
   """
-    count = {'train': 42600, 'validation': 9044, 'test': 9278}
+  count = {'train': 42600, 'validation': 9044, 'test': 9278}
 
-    data = tfds.load('deeplesion/{}'.format(config_name), data_dir=data_dir)
-    dataset = data[split]
+  data = tfds.load('deeplesion/{}'.format(config_name), data_dir=data_dir)
+  dataset = data[split]
 
-    dataset = dataset.map(lambda x: (x['image']),
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.map(lambda x: (_debias_HU(x)),
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    dataset = dataset.map(lambda x: (tf.clip_by_value(x, -1024, 200)),
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    # augment
-    if augment:
-        dataset = dataset.map(lambda x:
-                              (random_jitter(x, [size[0], size[1], 1])),
-                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    else:
-        dataset = dataset.map(lambda x: (tf.image.resize(
-            x, [size[0], size[1]],
-            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)),
-                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  dataset = dataset.map(lambda x: (x['image']),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  dataset = dataset.map(lambda x: (_debias_HU(x)),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  dataset = dataset.map(lambda x: (tf.clip_by_value(x, -1024, 200)),
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  # augment
+  if augment:
+      dataset = dataset.map(lambda x:
+                            (random_jitter(x, [size[0], size[1], 1])),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  else:
+      dataset = dataset.map(lambda x: (tf.image.resize(
+          x, [size[0], size[1]],
+          method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-    dataset = dataset.map(lambda x: (normalize(x)), 
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  dataset = dataset.map(lambda x: (normalize(x)), 
+                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
 
-    return dataset, count[split]
+  return dataset, count[split]
     
 
 def deeplesion_lr_hr_pair(split='train', size=(512, 512, 1), batch_size=8, factor=4, augment=False, data_dir=None):
