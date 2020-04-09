@@ -7,16 +7,20 @@ The above shows an example outcome of the CT-adapted [SISR](https://github.com/j
 
 ## Adaptd Model
 ![CT scan degradation model](examples/degradation_model_ct.png)
+
 Degradation of natural optical image, like an image captured by a phone's camera, happens in spatial space. On the contray, degradation of CT scans happen in radom space according of FBP(filtered back projection) reconstruction process. Therefore, the low resolution obervations of CT scan can be obtained by above degration model.
 
 ![CT-adapted SISR model](examples/sisr_ct_model.png)
+
 The above figure shows SISR model structure. the original model shown on the top. the CT-adapted SISR models shown on the bottom.
 
 ## Quick Start
 
 ### Training the model from scratch
 The repo was designed to be run in Google Cloud and makes use of GCS for logging. 
-It contains three training tasks, which are `srresnet_task`, `discriminator_task` and `srgan_task`. `srresnet_task` trains the generator of the srgan solely, `discriminator_task` trains the discriminator of the srgan solely and `srgan_task` trains both the generator and the discriminator jointly.
+It contains three training tasks, which are `srresnet_task`, `discriminator_task` and `srgan_task`. 
+
+`srresnet_task` trains the generator of the srgan solely, `discriminator_task` trains the discriminator of the srgan solely and `srgan_task` trains both the generator and the discriminator jointly.
 
 To train the srresnet, the generator solely, using
 ```
