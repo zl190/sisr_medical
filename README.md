@@ -25,7 +25,7 @@ The above figure shows two SISR model structures. The original model is shown on
 
 | NIH Deeplesion(CT)  | Bicubic           | SRResNet/SRGAN  | HR |
 | :-------------:     |:-------------:    | :-----:         |:--:|
-| PSNR                | 13.32             | 31.24           | \infty |
+| PSNR                | 13.32             | 31.24           | <img src="https://render.githubusercontent.com/render/math?math=\infty"> |
 | SSIM                | 0.40              |   0.86          | 1  |
 
 ### Training the model from scratch
