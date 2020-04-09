@@ -5,12 +5,11 @@
 ---
 ![example result of srgan](examples/sisr_ct_example.png)
 
-The above figures shows example outcomes of the Medical Image adapted [SISR](https://github.com/jason-zl190/sisr.git) model. Top is the result of ultrasound images and bottom is the result of CT scans. The result of CT scans was equalized by histogram to fair compare the differences.
-The ultrasound dataset is a part of  [tensorflow datasets](https://github.com/tensorflow/datasets.git). And the data is provided by [Duke Ultrasound](https://www.tensorflow.org/datasets/catalog/duke_ultrasound). 
+The above two figures shows example outcomes of this medical image adapted [SISR model](https://github.com/jason-zl190/sisr.git) model. Top is the result of ultrasound images and below is the result of CT scans. The result of CT scans was equalized by histogram to fairly compare the differences between different rows.
+
+The Ultrasound dataset is a part of  [tensorflow datasets](https://github.com/tensorflow/datasets.git). And the data is provided by [Duke Ultrasound](https://www.tensorflow.org/datasets/catalog/duke_ultrasound). 
+
 The CT dataset can be get from [this forked repo](https://github.com/jason-zl190/datasets.git) of [tensorflow datasets](https://github.com/tensorflow/datasets.git). And the data is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
-
-
-*the CT dataset is under reviewing by tensorflow datasets*
 
 
 ## Quick Start
