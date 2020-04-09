@@ -3,20 +3,20 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![example result of srgan](examples/sisr_ct_example.png)
 
-The above shows an example outcome of the CT-adapted [SISR](https://github.com/jason-zl190/sisr.git) model. The [dataset](https://github.com/jason-zl190/datasets.git) is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
+The above figure shows an example outcome of the CT-adapted [SISR](https://github.com/jason-zl190/sisr.git) model. The [dataset](https://github.com/jason-zl190/datasets.git) is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
 
 ## Adaptd Model
 <p align="center">
   <img src="examples/degradation_model_ct.png" alt="CT scan degradation model"/>
 </p>
 
-Degradation of natural optical image, like an image captured by a phone's camera, happens in spatial space. On the contray, degradation of CT scans happen in radom space according of FBP(filtered back projection) reconstruction process. Therefore, the low resolution obervations of CT scan can be obtained by above degration model.
+Degradation of an optical image, like a phone camera captured image, happens in spatial space. On the contrary, the degradation of CT scans occurs in radon space, according to FBP(filtered back projection) reconstruction process. Therefore, the low-resolution observations of CT scans can be obtained by the above degradation model.
 
 <p align="center">
   <img src="examples/sisr_ct_model.png" alt="CT-adapted SISR model"/>
 </p>
 
-The above figure shows SISR model structure. the original model shown on the top. the CT-adapted SISR models shown on the bottom.
+The above figure shows two SISR model structures. The original model is shown on the top. The CT-adapted SISR model is shown on the bottom.
 
 ## Quick Start
 
