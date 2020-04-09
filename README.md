@@ -2,14 +2,15 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![example result of srgan](examples/sisr_ultrasound_example.png)
+---
 ![example result of srgan](examples/sisr_ct_example.png)
 
 The above figures shows example outcomes of the Medical Image adapted [SISR](https://github.com/jason-zl190/sisr.git) model. Top is the result of ultrasound images and bottom is the result of CT scans. The result of CT scans was equalized by histogram to fair compare the differences.
 The ultrasound dataset is a part of  [tensorflow datasets](https://github.com/tensorflow/datasets.git). And the data is provided by [Duke Ultrasound](https://www.tensorflow.org/datasets/catalog/duke_ultrasound). 
 The CT dataset can be get from [this forked repo](https://github.com/jason-zl190/datasets.git) of [tensorflow datasets](https://github.com/tensorflow/datasets.git). And the data is provided by [NIH Deeplesion](https://nihcc.app.box.com/v/DeepLesion). 
 
+
 *the CT dataset is under reviewing by tensorflow datasets*
-*Thanks to Duke DS+ program providing compute resources for the CT adapted model training*
 
 
 ## Quick Start
@@ -22,9 +23,9 @@ The CT dataset can be get from [this forked repo](https://github.com/jason-zl190
 Super-resolution is a process of upscaling and improving the details within an image. This estimation is an inverse problem mapping from an LR observation to its HR representative. In this scenario, an LR observation usually comes from a specific degradation model. Unlike the degradation of an optical image, like a phone camera captured image, which simultaneously happens in two dimensions of spatial space. 
 The choice of degradation model of medical images depends on the reconstruction methods. In the simplest case, Ultrasound images are constructed by vertical beam scan lines in spatial space. So the degradation of ultrasound images occurs in the only x-direction. On the contrary, the degradation of CT scans occurs in theta line of radon space, according to FBP(filtered back projection) reconstruction process. Therefore, the low-resolution observations of Ultrasound images & CT scans can be obtained by the above degradation models (left is the degradation model of Ultrasound images, right is the degradation model of CT scans.)
 
-### Adapted Model
+### Adapted Models
 <p align="center">
-  <img src="examples/sisr_adapted_model.png" alt="medical image adapted SISR models"/>
+  <img src="examples/adapted_sisr_models.png" alt="medical image adapted SISR models"/>
 </p>
 
 The above figure shows three SISR model structures. From top to bottom, the top is the original model. the lasted two are adatped SISR models according to the degradation model of Ultrasound images and the degradation model of CT scans separately.
@@ -45,7 +46,9 @@ The above figure shows three SISR model structures. From top to bottom, the top 
 The repo was designed to be run in Google Cloud and makes use of GCS for logging. 
 It contains three training tasks, which are `srresnet_task`, `discriminator_task` and `srgan_task`. 
 
+
 `srresnet_task` trains the generator of the srgan solely, `discriminator_task` trains the discriminator of the srgan solely and `srgan_task` trains both the generator and the discriminator jointly.
+
 
 To train the srresnet, the generator solely, using
 ```
@@ -69,6 +72,20 @@ python3 -m trainer.srgan_task --g_weight '<pretrained generator weight path>' --
 
 More custom training parameters can be set by reading the configuration file: `trainer/config.py`
 
+### Switching between trainings
+The default trainig are set for CT scans. To change the trainig for Ultrasound images, replace the following two lines
+```
+from trainer.datasets.sisr_ct import deeplesion_lr_hr_pair
+from trainer.models.sisr_ct import [MySRResNet | Discriminator | MySRGAN]
+```
+with
+```
+from trainer.datasets.sisr_ultrasound import deeplesion_lr_hr_pair
+from trainer.models.sisr_ultrasound import [MySRResNet | Discriminator | MySRGAN]
+```
+### Warning
+The CT data is enormous and requires around 60GB disk space and 10 hours to download and serialized. The actual download time depends on Internet speed. Besides, the calculation of 2000 LR samples of CT scans may require another 10 hours. So, be patient and prepare some tea and cookies for the first time training.
+
 ## License
 Copyright 2019 Zisheng Liang
 
@@ -78,28 +95,12 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-## Citing
-```
-@article{DBLP:journals/corr/LedigTHCATTWS16,
-  author    = {Christian Ledig and
-               Lucas Theis and
-               Ferenc Huszar and
-               Jose Caballero and
-               Andrew P. Aitken and
-               Alykhan Tejani and
-               Johannes Totz and
-               Zehan Wang and
-               Wenzhe Shi},
-  title     = {Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial
-               Network},
-  journal   = {CoRR},
-  volume    = {abs/1609.04802},
-  year      = {2016},
-  url       = {http://arxiv.org/abs/1609.04802},
-  archivePrefix = {arXiv},
-  eprint    = {1609.04802},
-  timestamp = {Mon, 13 Aug 2018 16:48:38 +0200},
-  biburl    = {https://dblp.org/rec/bib/journals/corr/LedigTHCATTWS16},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
-}
-```
+## Thanks
+Thanks to Ouwen and Prof.Palmeri's Lab providing the ultrasound data and thanks to Duke DS+ program providing compute resources for the CT adapted model training.
+
+## Reference
+- O. Huang et al., "MimickNet, Mimicking Clinical Image Post-Processing Under Black-Box Constraints," in IEEE Transactions on Medical Imaging.
+
+- Ke Yan et al., "DeepLesion: automated mining of large-scale lesion annotations and universal lesion detection with deep learning," J. Med. Imag. 5(3) 036501 (20 July 2018)
+
+- C. Ledig et al., "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network," 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), Honolulu, HI, 2017, pp. 105-114.
