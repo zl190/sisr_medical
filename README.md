@@ -9,11 +9,12 @@ The above shows an example outcome of the CT-adapted [SISR](https://github.com/j
 <p align="center">
   <img src="examples/degradation_model_ct.png" alt="CT scan degradation model"/>
 </p>
-![CT scan degradation model](examples/degradation_model_ct.png)
 
 Degradation of natural optical image, like an image captured by a phone's camera, happens in spatial space. On the contray, degradation of CT scans happen in radom space according of FBP(filtered back projection) reconstruction process. Therefore, the low resolution obervations of CT scan can be obtained by above degration model.
 
-![CT-adapted SISR model](examples/sisr_ct_model.png)
+<p align="center">
+  <img src="examples/sisr_ct_model.png" alt="CT-adapted SISR model"/>
+</p>
 
 The above figure shows SISR model structure. the original model shown on the top. the CT-adapted SISR models shown on the bottom.
 
