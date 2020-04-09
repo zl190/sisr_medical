@@ -13,23 +13,28 @@ limitations under the License.
 
 import time
 import argparse
+from pathlib import Path
+
+time_string = str(time.strftime("%Y%m%d-%H%M%S"))
+model_name = 'srgan_deeplesion_16x'
 
 def get_config():
     parser = argparse.ArgumentParser()
-
-    # Input parser
-    parser.add_argument('--bs',       default=8,    type=int, help='batch size')
-    parser.add_argument('--in_h',     default=224,  type=int, help='image input size height')
-    parser.add_argument('--in_w',     default=224,  type=int, help='image input size width')
-    parser.add_argument('--in_lh',     default=56,  type=int, help='low resolution image size height')
-    parser.add_argument('--in_lw',     default=56,  type=int, help='low resolution image size width')
-    parser.add_argument('--epochs',   default=100,  type=int, help='number of epochs')
-    parser.add_argument('--lr',       default=1e-4, type=float, help='learning rate')
-    parser.add_argument('--m',        default=True, type=bool, help='manual run or hp tuning')
-
     
-    # dataset
-    parser.add_argument('--dataset',  default='oxford_iiit_pet', help='dataset for training')
+    # dataset Params
+    parser.add_argument('--data_dir',  default=None, help='Directory to store downloaded and serialized data')
+    parser.add_argument('--im_h', default=512, type=int, help='height of ground truth image')
+    parser.add_argument('--im_w', default=512, type=int, help='width of ground truth image')
+
+    # model Params
+    parser.add_argument('--model_name', default=model_name)
+    parser.add_argument('--upsampling_rate', default=16, type=int, help='unsampling rate of the model')
+    
+    
+    # training Params
+    parser.add_argument('--lr',       default=1e-4, type=float, help='learning rate')
+    parser.add_argument('--batch_size',       default=1,    type=int, help='batch size')
+    parser.add_argument('--num_epochs',   default=20,  type=int, help='number of epochs')
 
     
     # GAN Params
@@ -37,10 +42,13 @@ def get_config():
     parser.add_argument('--GAN_LOSS_ALPHA', default=0.001, type=float, help='importance of GAN loss')
 
   
-    # Cloud ML Params
-    parser.add_argument('--job-dir', default='gs://duke-MML/sisr/tmp/{}'.format(str(time.time())), help='Job directory for Google Cloud ML')
-    parser.add_argument('--model_dir', default='./trained_models', help='Directory for trained models')
-    parser.add_argument('--image_dir', default=None, help='Local image directory')
+    # log Params
+    parser.add_argument('--job_dir',
+                        default='../jobs/{}_{}'.format(model_name.upper(), time_string),
+                        help='Job directory for tensorboard logging')
+    parser.add_argument('--model_dir',
+                        default='./trained_models/{}_{}'.format(model_name.upper(), time_string),
+                        help='Directory for trained models')
     
     # pretrained weight
     parser.add_argument('--g_weight', default=None, help='pretrained generator weight path')
@@ -49,9 +57,7 @@ def get_config():
     
     parsed, unknown = parser.parse_known_args()
     
-    print('Unknown args:', unknown)
-    print('Parsed args:', parsed.__dict__)
-    
+
     return parsed
 
 config = get_config()

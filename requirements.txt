@@ -1,0 +1,5 @@
+tensorflow_gpu
+tensorflow_datasets
+numpy
+pandas
+scikit-image

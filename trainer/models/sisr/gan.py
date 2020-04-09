@@ -17,33 +17,6 @@ from trainer.models.sisr import MySRResNet, Discriminator
 from trainer import utils
 
 
-
-#Load VGG model
-# from tensorflow.keras import models, optimizers, metrics
-# from tensorflow.keras.applications.vgg19 import preprocess_input
-# vgg = tf.keras.applications.VGG19(include_top=False, weights='imagenet', input_shape = [224,224,3])
-# vgg.trainable = False
-# content_layers = 'block5_conv2'
-
-# lossModel = models.Model([vgg.input], vgg.get_layer(content_layers).output, name = 'vggL')
-
-# def _lossMSE(y_true, y_pred):
-#   return tf.reduce_mean(tf.square(y_true - y_pred))
-
-# def _lossVGG(y_true, y_pred):
-#   Xt = preprocess_input(y_pred*255)
-#   Yt = preprocess_input(y_true*255)
-#   vggX = lossModel(Xt)
-#   vggY = lossModel(Yt)
-#   return tf.reduce_mean(tf.square(vggY-vggX))
-
-# def _lossGAN(y_pred):
-#   """
-#     params:
-#     X: hr_pred
-#   """
-#   return tf.sum(-1*tf.math.log(D(y_pred)))
-
 LAMBDA = 100
 cross_entropy = tf.keras.losses.BinaryCrossentropy()
 
@@ -75,24 +48,24 @@ def g_loss(disc_generated_output, gen_output, target):
   
 class MySRGAN:   
     def __init__(self, g=None, d=None,
-                 hr_shape=(None, None, 3),
-                 lr_shape=(None, None, 3),
+                 shape=(None, None, 1),
+                 upsampling_rate = 16,
                  L1_LOSS_ALPHA = 100,
                  GAN_LOSS_ALPHA = 0.001,
-                 NUM_ITER = 1):
+                 ):
         
-        self.hr_shape = hr_shape
-        self.lr_shape = lr_shape
+        self.lr_shape = shape
+        self.hr_shape = shape
+        self.upsampling_rate = upsampling_rate
         
         if g is None or d is None:
             self.d = Discriminator(self.hr_shape)()
-            self.g = MySRResNet(self.lr_shape)()
+            self.g = MySRResNet(self.lr_shape, upsampling_rate)()
         else:
             self.d, self.g = d, g
         
         self.GAN_LOSS_ALPHA = GAN_LOSS_ALPHA
         self.L1_LOSS_ALPHA = L1_LOSS_ALPHA
-        self.NUM_ITER = NUM_ITER
         
     def get_models(self):
         return self.g, self.d
@@ -242,13 +215,6 @@ class MySRGAN:
             for callback in callbacks: callback.on_epoch_begin(epoch, logs=self.log)
             for step in range(steps_per_epoch):
                 for callback in callbacks: callback.on_batch_begin(step, logs=self.log)
-                
-#                 for i in range(self.NUM_ITER): # Train critics more than generator
-#                     input_image, target = next(self.dataset_next)
-#                     d_loss = self.discriminator_model.train_on_batch(x=[input_image, target], 
-#                                                               y=[np.ones((target.shape[0],1)), # valid
-#                                                                  np.zeros((target.shape[0],1)), # invalid
-#                                                                 ]) 
                 
                 input_image, target = next(self.dataset_next)
                 d_loss = self.discriminator_model.train_on_batch(x=[input_image, target], 

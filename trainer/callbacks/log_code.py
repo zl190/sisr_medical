@@ -24,7 +24,7 @@ class LogCode(tf.keras.callbacks.Callback):
             if sys.version_info[1] >= 7: #python3.7
                 tar.add(code_dir, arcname=os.path.basename(code_dir), filter=exclude_function)
             else:
-                tar.add(code_dir, arcname=os.path.basename(code_dir), exclude=exclude_function) 
+                tar.add(code_dir, arcname=os.path.basename(code_dir), exclude=exclude_function_old) 
         with file_io.FileIO(filepath, mode='rb') as input_f:
             with file_io.FileIO(os.path.join(log_dir, os.path.basename(filepath)), mode='wb+') as of:
                 of.write(input_f.read())

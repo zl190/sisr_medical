@@ -1,49 +1,84 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# Setup Global Env
+env_path = {
+  'customed_tfds':'../../datasets/', # tfds package (with deeplesion)
+}
+
+import os, sys
+for k, v in env_path.items(): 
+  if v not in sys.path:
+    sys.path.insert(0, v)
+
 import tensorflow as tf
 from trainer import utils, models, callbacks, datasets, config
+from trainer.models.sisr import MySRResNet, Discriminator
+from pathlib import Path
+
+_DATA_DIR = '/datacommons/plusds/team10-zl190/Spring20/tensorflow_datasets' # data_dir
 
 
-# Prepare data
-train_dataset, train_count = datasets.get_oxford_iiit_pet_dataset_for_D('train', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
-validation_dataset, validation_count = datasets.get_oxford_iiit_pet_dataset_for_D('test', batch_size=config.bs, downsampling_factor=4, size=(config.in_h, config.in_w, 3))
+def load_clf_data(split, batch_size, weak_model):
+  dataset, cnt = deeplesion_lr_hr_pair(split, size=(config.im_h, config.im_w, 1), batch_size=1, factor=config.upsampling_rate, augment=False, data_dir=config.data_dir)
+  dataset = dataset.take(cnt)
+  dataset = dataset.unbatch() 
+  
+  dataset_lr = dataset.map(lambda x, y: x,
+                       num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  dataset_hr = dataset.map(lambda x, y: y,
+                       num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+  dataset_weak = dataset_lr.map(lambda x: weak_model(tf.expand_dims(x,0), training=False)[0],
+                       num_parallel_calls=tf.data.experimental.AUTOTUNE)
+  
+  # label data
+  dataset_weak = dataset_weak.map(lambda x: (x, 0)) 
+  dataset_hr = dataset_hr.map(lambda x: (x, 1))   
+
+  # interleaves elements from datasets at random
+  dataset = tf.data.experimental.sample_from_datasets([dataset_hr, dataset_weak])
+
+  # batch
+  dataset = dataset.repeat().batch(batch_size).prefetch(16)
+  return dataset, cnt*2
 
 
-# Compile or load the model
-if config.d_weight == None:
-    d_model = models.sisr.Discriminator(shape=(config.in_h, config.in_w, 3))()
+# dataset
+weak_model = tf.keras.models.load_model(config.g_weight, compile=False)
+train_dataset, train_count = load_clf_data('train', config.batch_size, weak_model)
+validation_dataset, validation_count = load_clf_data('validation', config.batch_size, weak_model)
 
-    d_model.compile(optimizer=tf.keras.optimizers.Adam(config.lr2), 
-                            loss=[tf.keras.losses.binary_crossentropy],
-                            metrics=[tf.keras.metrics.Accuracy()],
-                            )
+
+# model
+if config.d_weight:
+  model = tf.keras.models.load_model(config.d_weight, compile=False)
 else:
-    d_model = tf.keras.models.load_model(config.d_weight)
+  model = Discriminator(shape=(config.im_h, config.im_w, 1))()
 
-# Callbacks
-write_freq = int(train_count/config.bs/10)
-tensorboard = tf.keras.callbacks.TensorBoard(log_dir=config.job_dir, write_graph=True, update_freq=write_freq)
+# optimizer & loss & metrics
+optimizer = tf.keras.optimizers.Adam(learning_rate=config.lr,beta_1=0.9)
+loss = [tf.keras.losses.BinaryCrossentropy(name='loss')]
+metrics = [tf.keras.metrics.BinaryAccuracy(name='accuracy'), 
+          tf.keras.metrics.AUC(name='auc')]
 
-saving = tf.keras.callbacks.ModelCheckpoint(config.model_dir + '/d' + '/model.{epoch:02d}-{val_loss:.5f}.hdf5', monitor='val_loss', verbose=1, save_freq='epoch', save_best_only=False)
+model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-log_code = callbacks.LogCode(config.job_dir, './trainer')
-#copy_keras = callbacks.CopyKerasModel(config.model_dir, config.job_dir)
 
-#image_gen_val = callbacks.GenerateImages(generator_model, validation_dataset, config.job_dir, interval=write_freq, postfix='val')
-#image_gen = callbacks.GenerateImages(generator_model, train_dataset, config.job_dir, interval=write_freq, postfix='train')
-start_tensorboard = callbacks.StartTensorBoard(config.job_dir)
+# callbacks -- save model
+Path(config.model_dir).mkdir(parents=True, exist_ok=True)
+model_path = os.path.join(config.model_dir, 'model.{epoch:02d}-{val_loss:.5f}.h5')
+saving = tf.keras.callbacks.ModelCheckpoint(model_path,
+                                            monitor='val_loss',
+                                            verbose=1,
+                                            save_freq='epoch',
+                                            save_best_only=True,
+                                            save_weights_only=True)
 
-# Fit model
-d_model.fit(train_dataset,
-                    steps_per_epoch=int(train_count/config.bs),
-                    epochs=config.epochs,
-                    validation_data=validation_dataset,
-                    validation_steps=int(validation_count/config.bs),
-                    verbose=1,
-                    callbacks=[
-                      log_code, 
-                      start_tensorboard, 
-                      tensorboard, 
-                      #image_gen, 
-                      #image_gen_val, 
-                      saving, 
-                      #copy_keras
-                    ])
+
+history = model.fit(train_dataset,
+            steps_per_epoch=int(train_count / config.batch_size),
+            validation_data=validation_dataset,
+            validation_steps=int(validation_count / config.batch_size),
+            epochs=config.num_epochs,
+            callbacks=[saving])

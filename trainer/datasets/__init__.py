@@ -1,4 +1,1 @@
-from datasets import get_dataset
-from trainer.datasets.oxford_iiit_pet import get_oxford_iiit_pet_dataset
-from trainer.datasets.oxford_iiit_pet_D import get_oxford_iiit_pet_dataset_D
-from trainer.datasets.coco import get_coco_dataset
+from trainer.datasets.Deeplesion import deeplesion_lr_hr_pair
