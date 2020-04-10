@@ -82,8 +82,8 @@ with
 from trainer.datasets.sisr_ultrasound import deeplesion_lr_hr_pair
 from trainer.models.sisr_ultrasound import [MySRResNet | Discriminator | MySRGAN]
 ```
-### Warning
-The CT data is enormous and requires around 60GB disk space and 10 hours to download and serialized. The actual download time depends on Internet speed. Besides, the calculation of 2000 LR samples of CT scans may require another 10 hours. So, be patient and prepare some tea and cookies for the first time training.
+### Things to notice
+The CT data is enormous and requires around 60GB disk space and 10 hours to download and serialized. The actual download time depends on Internet speed. Besides, the calculation of 2000 LR samples of CT scans may require another 10 hours. So, be patient and prepare some :tea: and :cookie: for the first time training.
 
 ## License
 Copyright 2019 Zisheng Liang
