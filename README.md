@@ -1,6 +1,7 @@
 # Single Image Super Resolution on Medical Images (Ultrasound & CT)
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![DOI](https://zenodo.org/badge/254259538.svg)](https://zenodo.org/badge/latestdoi/254259538)
+
 ![example result of srgan](examples/sisr_ultrasound_example.png)
 ---
 ![example result of srgan](examples/sisr_ct_example.png)
